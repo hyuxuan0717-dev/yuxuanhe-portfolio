@@ -1,0 +1,2536 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Cat Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @font-face { font-family: 'ZCOOL KuaiLe Local'; src: url('./ZCOOLKuaiLe.ttf') format('truetype'); font-style: normal; font-weight: 400; font-display: swap; }
+        body { margin: 0; overflow: hidden; background-color: #050508; font-family: 'Inter', system-ui, sans-serif; touch-action: none; }
+        #canvas-container { width: 100vw; height: 100vh; display: block; cursor: crosshair; }
+        #port-video { touch-action: auto; }
+        
+        /* Custom UI transitions */
+        .ui-panel { opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(20px) scale(0.95); }
+        .ui-panel.active { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+        .fade-overlay { opacity: 1; transition: opacity 2s ease; pointer-events: none; }
+        .fade-overlay.hidden { opacity: 0; }
+        
+        #intro-mask { position: fixed; inset: 0; background: #050508; z-index: 50; display: flex; justify-content: center; align-items: center; }
+        #language-gate { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(3, 4, 10, 0.88); backdrop-filter: blur(18px); }
+        #language-gate.hidden { display: none; }
+    </style>
+</head>
+<body class="text-gray-200 selection:bg-gray-700 selection:text-white">
+
+    <div id="language-gate" role="dialog" aria-modal="true" aria-labelledby="language-gate-title">
+        <div class="w-[min(92vw,440px)] rounded-3xl border border-white/15 bg-slate-950/90 p-8 text-center shadow-2xl">
+            <p class="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-violet-200/70">YUXUAN HE · PORTFOLIO</p>
+            <h1 id="language-gate-title" class="mb-2 text-2xl font-black text-white">选择语言 · Select Language</h1>
+            <p class="mb-7 text-xs text-slate-400">请选择浏览语言 / Choose a language to explore</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" data-site-language="zh" class="rounded-2xl border border-violet-200/30 bg-violet-300/15 px-4 py-4 text-base font-bold text-white transition hover:bg-violet-300/25">简体中文</button>
+                <button type="button" data-site-language="en" class="rounded-2xl border border-cyan-200/30 bg-cyan-300/10 px-4 py-4 text-base font-bold text-white transition hover:bg-cyan-300/20">English</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading / Intro Mask -->
+    <div id="intro-mask" class="fade-overlay">
+        <div id="intro-message" class="text-2xl font-bold text-gray-400 animate-pulse tracking-widest">驶向小岛……</div>
+    </div>
+
+    <!-- Skip Button -->
+    <div id="skip-btn" class="absolute bottom-8 right-8 bg-black/50 hover:bg-black/80 backdrop-blur-md px-5 py-2.5 rounded-full text-white text-sm font-bold cursor-pointer border border-white/20 transition-all z-40 shadow-lg hidden">
+        跳过开场 ⏭
+    </div>
+
+    <!-- Instructions -->
+    <div id="instructions" class="ui-panel absolute top-6 left-6 bg-black/70 backdrop-blur-xl px-6 py-5 rounded-2xl shadow-2xl border border-gray-700 z-10">
+        <h1 id="instructions-title" class="text-xl font-black mb-2 text-white">夜间探索</h1>
+        <p id="instructions-controls" class="text-sm font-bold text-gray-400 mb-3">操作方式：</p>
+        <div class="flex gap-2">
+            <span class="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-mono shadow-[0_3px_0_#374151]">W</span>
+            <span class="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-mono shadow-[0_3px_0_#374151]">A</span>
+            <span class="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-mono shadow-[0_3px_0_#374151]">S</span>
+            <span class="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-sm font-mono shadow-[0_3px_0_#374151]">D</span>
+        </div>
+        <p id="instructions-hint" class="text-xs mt-4 text-gray-400 font-medium">沿发光小径探索作品。</p>
+    </div>
+
+    <!-- Portfolio UI Overlay -->
+    <div id="portfolio-overlay" class="ui-panel absolute top-3 right-3 w-[94vw] max-w-[760px] max-h-[calc(100vh-1.5rem)] overflow-y-auto bg-black/60 backdrop-blur-2xl rounded-3xl p-5 shadow-2xl border border-white/20 z-20">
+        <button id="port-close" type="button" aria-label="关闭介绍卡片" title="关闭" class="absolute top-4 right-4 z-10 w-9 h-9 rounded-full border border-white/25 bg-black/50 text-white/80 hover:text-white hover:bg-white/15 text-2xl leading-none transition-colors">×</button>
+        <div id="port-color-badge" class="w-12 h-2 rounded-full mb-4 shadow-[0_0_10px_currentColor]"></div>
+        <h2 id="port-title" class="text-xl font-black mb-2 pr-10 text-white leading-tight">Portfolio Title</h2>
+        <div id="port-video-list" class="hidden grid grid-cols-2 gap-2 mb-3"></div>
+        <div id="port-media-shell" class="w-full h-[22vh] min-h-[150px] max-h-[200px] bg-gray-950/90 rounded-2xl mb-3 flex flex-col items-center justify-center relative overflow-hidden border border-gray-700 group">
+            <div id="play-icon-container" class="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform cursor-pointer backdrop-blur-sm border border-white/20">
+                <!-- Play Icon -->
+                <div class="w-0 h-0 border-t-[8px] border-t-transparent border-l-[14px] border-l-white border-b-[8px] border-b-transparent ml-1"></div>
+            </div>
+            <span id="play-text" class="text-gray-400 font-bold text-xs tracking-widest uppercase mt-4">Play Media</span>
+            <video id="port-video" class="hidden absolute inset-0 w-full h-full object-contain bg-black" controls playsinline preload="none"></video>
+            <iframe id="port-bilibili-frame" class="hidden absolute inset-0 h-full w-full border-0 bg-black" title="Bilibili video player" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </div>
+
+        <div id="port-desc" class="grid grid-cols-1 gap-3 mb-3 pr-1">
+            <h3 id="port-desc-heading" class="col-span-1 text-sm font-black tracking-wide text-amber-100">作品简介</h3>
+        <div id="port-resume-contact" class="hidden col-span-1 flex items-center justify-between gap-3 rounded-xl border border-cyan-200/20 bg-cyan-200/[0.07] px-4 py-3"><span id="resume-contact-label" class="text-[9px] font-black uppercase tracking-[0.18em] text-cyan-100/70">联系方式</span><a href="mailto:hyuxuan0717@163.com" class="text-[11px] font-bold text-cyan-50 underline decoration-cyan-200/35 underline-offset-4">hyuxuan0717@163.com</a></div>
+            <section class="rounded-xl bg-white/5 p-3">
+                <div id="port-desc-zh" class="text-[11px] text-gray-300 leading-[1.4] whitespace-pre-line"></div>
+            </section>
+            <section class="rounded-xl bg-white/5 p-3">
+                <div id="port-desc-en" class="text-[11px] text-gray-300 leading-[1.4] whitespace-pre-line"></div>
+            </section>
+        </div>
+
+        <section id="port-extra-links" class="hidden mb-3 rounded-2xl border border-amber-200/20 bg-amber-200/[0.06] p-4">
+            <h3 id="port-extra-heading" class="mb-3 text-xs font-black tracking-wide text-amber-100">民乐团主页</h3>
+            <a id="port-channel-link" href="https://b23.tv/BxDLqIH" target="_blank" rel="noopener noreferrer" class="group block overflow-hidden rounded-xl border border-amber-100/20 bg-black/30 transition hover:border-amber-100/50">
+                <div class="relative h-24 overflow-hidden bg-slate-900">
+                    <img src="https://i1.hdslb.com/bfs/activity-plat/static/0977767b2e79d8ad0a36a731068a83d7/1sz3p8w2Sk.png@1920w_200h_1c_100q.webp" alt="上海交通大学学生民乐团 B 站主页横幅" loading="lazy" class="h-full w-full object-cover object-center opacity-80 transition group-hover:scale-[1.02]">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"></div>
+                    <div class="absolute inset-x-3 bottom-2 flex items-end gap-2.5">
+                        <img src="https://i1.hdslb.com/bfs/face/174b608b2b3c1f0d8b398d4f026c8d07f482079d.jpg@128w_128h_1c_1s.webp" alt="民乐团主页头像" loading="lazy" class="h-10 w-10 rounded-full border-2 border-amber-100/70 object-cover shadow-lg">
+                        <span class="pb-0.5 text-xs font-black text-white drop-shadow">上交民乐第二胡</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5 p-2">
+                    <img src="https://i1.hdslb.com/bfs/archive/a37e5877a1e31d0026ca93c2ca515c614dae3b07.jpg@672w_378h_1c.webp" alt="民乐团主页视频封面：吹打乐重奏《功夫》" loading="lazy" class="aspect-video w-full rounded-md object-cover">
+                    <img src="https://i1.hdslb.com/bfs/archive/6186708c6a7004ec1cbabb36e393c4265dd8b753.jpg@672w_378h_1c.webp" alt="民乐团主页视频封面：庆典序曲" loading="lazy" class="aspect-video w-full rounded-md object-cover">
+                    <img src="https://i1.hdslb.com/bfs/archive/d1b7a4606c368bd82a4da029114923efbf1ad115.jpg@672w_378h_1c.webp" alt="民乐团主页视频封面：《青青思念》" loading="lazy" class="aspect-video w-full rounded-md object-cover">
+                </div>
+                <div class="flex items-center justify-between px-3 pb-3 text-[10px] font-bold text-amber-50/85"><span id="port-channel-label" data-zh="打开上海交通大学中国民族管弦乐团主页" data-en="Open SJTU Chinese Orchestra channel">打开上海交通大学中国民族管弦乐团主页</span><span aria-hidden="true">↗</span></div>
+            </a>
+        </section>
+
+        <button id="port-link" class="w-full text-center py-3.5 rounded-xl font-bold text-black transition-all shadow-[0_0_15px_rgba(255,255,255,0.2)] hover:shadow-[0_0_25px_rgba(255,255,255,0.4)] active:translate-y-0.5">
+            查看作品信息
+        </button>
+    </div>
+
+    <audio id="ambient-wave" src="./网站音效/background%20wave.wav" loop preload="auto"></audio>
+    <audio id="ambient-forest" src="./网站音效/forest.mp3" loop preload="auto"></audio>
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script>
+        let siteLanguage = 'zh';
+        const signTextureRedrawers = [];
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050508); // Dark night sky
+        scene.fog = new THREE.FogExp2(0x050508, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // Camera-mounted sky elements are rendered only when the camera is in the scene graph.
+        scene.add(camera);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        // Filmic tone mapping helps glowing elements look better
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Very dim ambient light for night
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.05);
+        scene.add(ambientLight);
+
+        // Moonlight (weak directional light)
+        const dirLight = new THREE.DirectionalLight(0xaaccff, 0.15);
+        dirLight.position.set(50, 100, 30);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 10;
+        dirLight.shadow.camera.far = 200;
+        dirLight.shadow.camera.left = -70;
+        dirLight.shadow.camera.right = 70;
+        dirLight.shadow.camera.top = 70;
+        dirLight.shadow.camera.bottom = -70;
+        dirLight.shadow.bias = -0.001;
+        scene.add(dirLight);
+
+        // STRICTLY Grayscale for infrastructure
+        const mats = {
+            ocean: new THREE.MeshStandardMaterial({ color: 0x111827, emissive: 0x062b48, emissiveIntensity: 0.72, roughness: 0.18, metalness: 0.65, flatShading: true }),
+            beach: new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 }),
+            grass: new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 1.0 }),
+            path: new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.8, flatShading: true }),
+            wood: new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.9 }),
+            pineLeaves: new THREE.MeshStandardMaterial({ color: 0x151515, roughness: 0.9, flatShading: true }),
+            bushLeaves: new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.8, flatShading: true }),
+            trunk: new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 1.0 }),
+            catBody: new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.5 }),
+            sail: new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.8, side: THREE.DoubleSide }),
+            lampPole: new THREE.MeshStandardMaterial({ color: 0x0f0f0f, roughness: 0.6 }),
+            flowerPetal: new THREE.MeshStandardMaterial({ color: 0x777777, roughness: 1.0, flatShading: true })
+        };
+
+        // Ocean
+        const oceanGeo = new THREE.PlaneGeometry(400, 400, 60, 60);
+        const oceanPosAttribute = oceanGeo.attributes.position;
+        const oceanInitZ = [];
+        for (let i = 0; i < oceanPosAttribute.count; i++) {
+            oceanInitZ.push(oceanPosAttribute.getZ(i));
+        }
+        const ocean = new THREE.Mesh(oceanGeo, mats.ocean);
+        ocean.rotation.x = -Math.PI / 2;
+        ocean.position.y = -2;
+        ocean.receiveShadow = true;
+        scene.add(ocean);
+
+        // Soft, scattered moonlit glints riding over the waves.
+        const seaGlintCount = 260;
+        const seaGlintPositions = new Float32Array(seaGlintCount * 3);
+        const seaGlints = [];
+        for (let i = 0; i < seaGlintCount; i++) {
+            const x = (Math.random() - 0.5) * 390;
+            const z = (Math.random() - 0.5) * 390;
+            seaGlintPositions[i * 3] = x;
+            seaGlintPositions[i * 3 + 1] = 0;
+            seaGlintPositions[i * 3 + 2] = z;
+            seaGlints.push({ x, z, phase: Math.random() * Math.PI * 2, scale: 0.5 + Math.random() * 1.5 });
+        }
+        const seaGlintGeo = new THREE.BufferGeometry();
+        seaGlintGeo.setAttribute('position', new THREE.BufferAttribute(seaGlintPositions, 3));
+        const seaGlintMat = new THREE.PointsMaterial({ color: 0x55dfff, size: 1.25, transparent: true, opacity: 0.48, blending: THREE.AdditiveBlending, depthWrite: false });
+        const seaGlintsMesh = new THREE.Points(seaGlintGeo, seaGlintMat);
+        seaGlintsMesh.position.y = -2;
+        scene.add(seaGlintsMesh);
+
+        // Island (Circular/Oval diorama base)
+        const islandGroup = new THREE.Group();
+        
+        const beachRadius = 45;
+        const beach = new THREE.Mesh(new THREE.CylinderGeometry(beachRadius, beachRadius + 2, 2, 64), mats.beach);
+        beach.position.y = -1;
+        beach.receiveShadow = true;
+        islandGroup.add(beach);
+
+        const grassRadius = 41;
+        const grass = new THREE.Mesh(new THREE.CylinderGeometry(grassRadius, grassRadius + 2, 1.5, 64), mats.grass);
+        grass.position.y = 0.5;
+        grass.receiveShadow = true;
+        grass.castShadow = true;
+        islandGroup.add(grass);
+        
+        scene.add(islandGroup);
+
+        // Pier
+        const pierZ = 43;
+        const pier = new THREE.Group();
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(6, 0.5, 18), mats.wood);
+        deck.position.set(0, 0, pierZ);
+        deck.castShadow = true;
+        deck.receiveShadow = true;
+        pier.add(deck);
+        
+        for(let z of [pierZ - 8, pierZ, pierZ + 8]) {
+            for(let x of [-2.5, 2.5]) {
+                const post = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 4), mats.wood);
+                post.position.set(x, -1, z);
+                post.castShadow = true;
+                pier.add(post);
+            }
+        }
+        scene.add(pier);
+
+        // Boat
+        const boatGroup = new THREE.Group();
+        const hull = new THREE.Mesh(new THREE.BoxGeometry(5, 2, 10), mats.wood);
+        hull.position.y = 0.5;
+        hull.castShadow = true;
+        
+        const bow = new THREE.Mesh(new THREE.CylinderGeometry(0, 2.5, 5, 3), mats.wood);
+        bow.rotation.x = Math.PI / 2;
+        bow.rotation.y = -Math.PI / 6;
+        bow.position.set(0, 0.5, -6.5);
+        bow.castShadow = true;
+
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 8), mats.wood);
+        mast.position.set(0, 5, 0);
+        mast.castShadow = true;
+        
+        const sail = new THREE.Mesh(new THREE.ConeGeometry(3, 7, 3), mats.sail);
+        sail.position.set(0, 5, -1);
+        sail.rotation.y = Math.PI;
+        sail.castShadow = true;
+        
+        boatGroup.add(hull);
+        boatGroup.add(bow);
+        boatGroup.add(mast);
+        boatGroup.add(sail);
+        
+        const boatStartZ = pierZ + 70;
+        const boatDockZ = pierZ + 12;
+        boatGroup.position.set(0, -1, boatStartZ);
+        scene.add(boatGroup);
+
+        // Cat Character
+        const catGroup = new THREE.Group();
+        const catBody = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.7, 1.4, 16), mats.catBody);
+        catBody.rotation.x = Math.PI / 2;
+        catBody.position.y = 0.8;
+        catBody.castShadow = true;
+        catGroup.add(catBody);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.7, 32, 32), mats.catBody);
+        head.position.set(0, 1.5, -0.7);
+        head.castShadow = true;
+        catGroup.add(head);
+
+        const earGeo = new THREE.ConeGeometry(0.25, 0.6, 16);
+        const earL = new THREE.Mesh(earGeo, mats.catBody);
+        earL.position.set(-0.35, 2.0, -0.6);
+        earL.rotation.set(0.2, 0, 0.2);
+        catGroup.add(earL);
+        const earR = new THREE.Mesh(earGeo, mats.catBody);
+        earR.position.set(0.35, 2.0, -0.6);
+        earR.rotation.set(0.2, 0, -0.2);
+        catGroup.add(earR);
+
+        const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 1.5, 8), mats.catBody);
+        tail.position.set(0, 1.0, 1.0);
+        tail.rotation.x = -Math.PI / 3;
+        catGroup.add(tail);
+
+        // Spotlights Eyes (Colorful)
+        const eyeColor = 0x00ffff; // Cyan piercing eyes
+        const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshBasicMaterial({color: eyeColor}));
+        eyeL.position.set(-0.3, 1.5, -1.3);
+        catGroup.add(eyeL);
+        const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshBasicMaterial({color: eyeColor}));
+        eyeR.position.set(0.3, 1.5, -1.3);
+        catGroup.add(eyeR);
+
+        const lightTarget = new THREE.Object3D();
+        scene.add(lightTarget);
+
+        // Stronger spotlights for night exploration
+        const spotLightL = new THREE.SpotLight(eyeColor, 8, 60, Math.PI / 6, 0.5, 1.5);
+        const spotLightR = new THREE.SpotLight(eyeColor, 8, 60, Math.PI / 6, 0.5, 1.5);
+        spotLightL.position.copy(eyeL.position);
+        spotLightR.position.copy(eyeR.position);
+        spotLightL.target = lightTarget;
+        spotLightR.target = lightTarget;
+        spotLightL.castShadow = true;
+        spotLightR.castShadow = true;
+        catGroup.add(spotLightL);
+        catGroup.add(spotLightR);
+        
+        scene.add(catGroup);
+        catGroup.visible = false;
+
+        // Cat MUST start exactly on the boat
+        const catBoatOffsetY = 1.6; // Deck height
+        catGroup.position.set(0, catBoatOffsetY - 1, boatStartZ);
+
+        // 3 Paths
+        const pathControlPoints = [
+            [ new THREE.Vector3(0, 1.3, pierZ - 10), new THREE.Vector3(-12, 1.3, 20), new THREE.Vector3(-25, 1.3, 15), new THREE.Vector3(-15, 1.3, -5), new THREE.Vector3(-32, 1.3, -20) ], // Left
+            [ new THREE.Vector3(0, 1.3, pierZ - 10), new THREE.Vector3(8, 1.3, 15), new THREE.Vector3(-10, 1.3, 0), new THREE.Vector3(5, 1.3, -15), new THREE.Vector3(0, 1.3, -32) ],   // Center
+            [ new THREE.Vector3(0, 1.3, pierZ - 10), new THREE.Vector3(15, 1.3, 25), new THREE.Vector3(30, 1.3, 5), new THREE.Vector3(15, 1.3, -10), new THREE.Vector3(32, 1.3, -18) ]    // Right
+        ];
+        // Pull portfolio paths farther into the island while leaving the pier entrance fixed.
+        const branchSpacing = [-8, 0, 8];
+        pathControlPoints.forEach((path, pathIndex) => {
+            for (let i = 1; i < path.length; i++) {
+                path[i].x *= 0.68;
+                path[i].z *= 0.68;
+                path[i].x += branchSpacing[pathIndex];
+            }
+        });
+        const pathCurves = pathControlPoints.map(pts => new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.8));
+        const allPathPoints = [];
+
+        pathCurves.forEach(curve => {
+            const points = curve.getPoints(50);
+            points.forEach(p => {
+                const stone = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 0.2, 7), mats.path);
+                stone.position.set(p.x + (Math.random()-0.5), p.y, p.z + (Math.random()-0.5));
+                stone.rotation.y = Math.random() * Math.PI;
+                stone.receiveShadow = true;
+                scene.add(stone);
+                allPathPoints.push(stone.position);
+            });
+        });
+
+        // Streetlamps along paths
+        const lamps = [];
+        pathCurves.forEach((curve, index) => {
+            // Place 3 lamps along each path
+            [0.25, 0.55, 0.85].forEach(t => {
+                const pt = curve.getPoint(t);
+                // Offset lamp slightly to the side of the path
+                const tangent = curve.getTangent(t);
+                const offset = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize().multiplyScalar((index%2===0 ? 2 : -2));
+                
+                const lampGroup = new THREE.Group();
+                const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 4), mats.lampPole);
+                pole.position.y = 3; // base is 1, center is 3
+                pole.castShadow = true;
+                lampGroup.add(pole);
+
+                const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshBasicMaterial({color: 0xffaa55}));
+                bulb.position.y = 5.2;
+                lampGroup.add(bulb);
+
+                const light = new THREE.PointLight(0xffaa55, 1.5, 15);
+                light.position.y = 5.2;
+                lampGroup.add(light);
+
+                lampGroup.position.set(pt.x + offset.x, 0, pt.z + offset.z);
+                scene.add(lampGroup);
+                lamps.push(lampGroup);
+            });
+        });
+
+        // Vegetation Helpers
+        function createPineTree(x, z) {
+            const group = new THREE.Group();
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 1.5), mats.trunk);
+            trunk.position.y = 2; trunk.castShadow = true;
+            const l1 = new THREE.Mesh(new THREE.ConeGeometry(2, 3, 5), mats.pineLeaves);
+            l1.position.y = 3.5; l1.castShadow = true;
+            const l2 = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.5, 5), mats.pineLeaves);
+            l2.position.y = 5; l2.castShadow = true;
+            group.add(trunk, l1, l2);
+            const scale = 0.5 + Math.random() * 0.7;
+            group.scale.set(scale, scale, scale);
+            group.position.set(x, 0, z);
+            return group;
+        }
+
+        function createSmallFlower(x, z) {
+            const group = new THREE.Group();
+            const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6), mats.pineLeaves);
+            stem.position.y = 1.55;
+            const petal = new THREE.Mesh(new THREE.DodecahedronGeometry(0.2), mats.flowerPetal);
+            petal.position.y = 1.85;
+            group.add(stem, petal);
+            group.position.set(x, 0, z);
+            return group;
+        }
+
+        function createGrassTuft(x, z) {
+            const group = new THREE.Group();
+            for(let i=0; i<4; i++) {
+                const blade = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.6 + Math.random()*0.5, 3), mats.pineLeaves);
+                blade.position.set((Math.random()-0.5)*0.5, 1.5, (Math.random()-0.5)*0.5);
+                blade.rotation.x = (Math.random()-0.5) * 0.5;
+                blade.rotation.z = (Math.random()-0.5) * 0.5;
+                group.add(blade);
+            }
+            group.position.set(x, 0, z);
+            return group;
+        }
+
+        // Generate dense vegetation
+        const pineTreePositions = [];
+        for (let i = 0; i < 500; i++) {
+            const r = Math.random() * (grassRadius - 2);
+            const theta = Math.random() * Math.PI * 2;
+            const x = r * Math.cos(theta);
+            const z = r * Math.sin(theta);
+
+            let tooClose = false;
+            for(let p of allPathPoints) {
+                if (Math.sqrt((x-p.x)**2 + (z-p.z)**2) < 3.5) { tooClose = true; break; }
+            }
+            if (z > pierZ - 15 && Math.abs(x) < 8) tooClose = true;
+
+            if (!tooClose) {
+                const rand = Math.random();
+                let veg;
+                if (rand < 0.2) { veg = createPineTree(x, z); pineTreePositions.push({ x, z, group: veg }); }
+                else if (rand < 0.5) veg = createSmallFlower(x, z);
+                else veg = createGrassTuft(x, z);
+                scene.add(veg);
+            }
+        }
+
+        // Add a separate seeded undergrowth layer so the original tree placements stay unchanged.
+        let groundSeed = 731942;
+        const groundRandom = () => {
+            groundSeed = (groundSeed * 1664525 + 1013904223) >>> 0;
+            return groundSeed / 4294967296;
+        };
+        for (let i = 0; i < 560; i++) {
+            const r = Math.sqrt(groundRandom()) * (grassRadius - 2);
+            const theta = groundRandom() * Math.PI * 2;
+            const x = r * Math.cos(theta);
+            const z = r * Math.sin(theta);
+            let tooClose = (z > pierZ - 15 && Math.abs(x) < 8);
+            for (let p = 0; !tooClose && p < allPathPoints.length; p++) {
+                if (Math.hypot(x - allPathPoints[p].x, z - allPathPoints[p].z) < 2.7) tooClose = true;
+            }
+            if (!tooClose) {
+                const plant = groundRandom() < 0.43 ? createSmallFlower(x, z) : createGrassTuft(x, z);
+                const scale = 0.65 + groundRandom() * 0.7;
+                plant.scale.setScalar(scale);
+                scene.add(plant);
+            }
+        }
+
+        // Quiet island wildlife beside the paths: foxes, rabbits, and deer.
+        const pathAnimals = [];
+        const pathAnimalStaticObstacles = [];
+        const pathAnimalSoftSphereGeo = new THREE.SphereGeometry(1, 18, 12);
+        function createPathAnimal(kind, x, z, angle) {
+            const animal = new THREE.Group();
+            const palette = {
+                fox: { fur: 0xd77b42, shadow: 0x9b482c, cream: 0xffe4bf, pink: 0xf49a91, nose: 0x39232a, spots: 0xffc278 },
+                rabbit: { fur: 0xd8d1d6, shadow: 0xaaa1ad, cream: 0xfff2e8, pink: 0xe995a5, nose: 0xc96f83, spots: 0xf5dce0 },
+                deer: { fur: 0xc88b52, shadow: 0x96613c, cream: 0xffe8bf, pink: 0xe6a090, nose: 0x62423a, spots: 0xfff1d0 }
+            }[kind];
+            const fur = new THREE.MeshStandardMaterial({ color: palette.fur, roughness: 0.82, emissive: palette.shadow, emissiveIntensity: 0.08, flatShading: false });
+            const cream = new THREE.MeshStandardMaterial({ color: palette.cream, roughness: 0.9, flatShading: false });
+            const shadowFur = new THREE.MeshStandardMaterial({ color: palette.shadow, roughness: 0.86 });
+            const innerEarMat = new THREE.MeshStandardMaterial({ color: palette.pink, roughness: 0.84, emissive: palette.pink, emissiveIntensity: 0.06 });
+            const blushMat = new THREE.MeshStandardMaterial({ color: 0xf08f9a, roughness: 0.9, transparent: true, opacity: 0.8 });
+            const noseMat = new THREE.MeshStandardMaterial({ color: palette.nose, roughness: 0.4, metalness: 0.02 });
+            const eyeWhiteMat = new THREE.MeshBasicMaterial({ color: 0xfff8eb });
+            const irisMat = new THREE.MeshStandardMaterial({ color: kind === 'rabbit' ? 0x684b48 : 0x6b4029, roughness: 0.28, metalness: 0.02 });
+            const pupilMat = new THREE.MeshBasicMaterial({ color: 0x17141b });
+            const glintMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const addBall = (parent, material, position, scale, radius = 1) => {
+                const mesh = new THREE.Mesh(pathAnimalSoftSphereGeo, material);
+                mesh.position.set(...position); mesh.scale.set(...scale); parent.add(mesh); return mesh;
+            };
+
+            // Plush pear-shaped body and a small cream chest make the silhouette read clearly at a distance.
+            const bodyY = kind === 'deer' ? 0.92 : 0.72;
+            const body = addBall(animal, fur, [0, bodyY, 0.04], kind === 'deer' ? [0.7, 0.6, 0.9] : [0.67, 0.49, 0.78]);
+            addBall(animal, cream, [0, bodyY - 0.08, -0.57], [0.43, 0.38, 0.3]);
+
+            // A large rounded head and glossy, highlighted eyes give each animal a softer expression.
+            const head = new THREE.Group();
+            const headY = kind === 'deer' ? 1.48 : 1.02;
+            const headZ = kind === 'deer' ? -0.62 : -0.58;
+            head.position.set(0, headY, headZ); animal.add(head);
+            const headRadius = kind === 'deer' ? 0.43 : 0.48;
+            addBall(head, fur, [0, 0, 0], [headRadius, headRadius * 0.94, headRadius * 0.84]);
+            [-1, 1].forEach(side => {
+                const eye = addBall(head, eyeWhiteMat, [side * headRadius * 0.43, headRadius * 0.1, -headRadius * 0.77], [0.105, 0.12, 0.055]);
+                addBall(head, irisMat, [side * headRadius * 0.43, headRadius * 0.085, -headRadius * 0.9], [0.073, 0.086, 0.035]);
+                addBall(head, pupilMat, [side * headRadius * 0.43, headRadius * 0.08, -headRadius * 0.97], [0.047, 0.06, 0.024]);
+                addBall(head, glintMat, [side * headRadius * 0.43 - 0.018, headRadius * 0.13, -headRadius * 1.015], [0.022, 0.026, 0.012]);
+                addBall(head, blushMat, [side * headRadius * 0.65, -headRadius * 0.25, -headRadius * 0.72], [0.085, 0.045, 0.018]);
+            });
+
+            const muzzleY = kind === 'deer' ? -0.2 : -0.22;
+            if (kind === 'fox') {
+                // Cream cheek mask, tiny muzzle, and pointed cheeks give the fox a distinct friendly face.
+                addBall(head, cream, [0, -0.12, -0.69], [0.22, 0.24, 0.12]);
+                [-1, 1].forEach(side => addBall(head, cream, [side * 0.13, muzzleY, -0.79], [0.15, 0.12, 0.1]));
+            } else {
+                addBall(head, cream, [0, muzzleY, -0.68], kind === 'deer' ? [0.24, 0.16, 0.12] : [0.21, 0.18, 0.12]);
+                if (kind === 'rabbit') {
+                    [-1, 1].forEach(side => addBall(head, cream, [side * 0.115, muzzleY - 0.025, -0.77], [0.13, 0.105, 0.075]));
+                }
+            }
+            const noseY = kind === 'deer' ? -0.16 : -0.19;
+            // A softly tapered bridge joins the muzzle to the nose so the profile reads as one face.
+            addBall(head, cream, [0, noseY + 0.015, -0.58], kind === 'deer' ? [0.19, 0.15, 0.34] : [0.18, 0.145, 0.32]);
+            addBall(head, noseMat, [0, noseY, -0.84], kind === 'deer' ? [0.078, 0.059, 0.09] : [0.075, 0.062, 0.09]);
+            const smileMat = new THREE.MeshBasicMaterial({ color: 0x5a3b40 });
+            const smile = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-0.075, noseY - 0.09, -0.91),
+                new THREE.Vector3(-0.035, noseY - 0.12, -0.93),
+                new THREE.Vector3(0, noseY - 0.1, -0.94),
+                new THREE.Vector3(0.035, noseY - 0.12, -0.93),
+                new THREE.Vector3(0.075, noseY - 0.09, -0.91)
+            ]);
+            head.add(new THREE.Mesh(new THREE.TubeGeometry(smile, 12, 0.012, 5, false), smileMat));
+            if (kind === 'rabbit') {
+                [-1, 1].forEach(side => {
+                    const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.09, 0.025), cream);
+                    tooth.position.set(side * 0.036, noseY - 0.17, -0.91); head.add(tooth);
+                });
+            }
+
+            // Soft oval ears replace the old sharp cones; the rabbit gets long, pink-lined ears.
+            const ears = [];
+            [-1, 1].forEach(side => {
+                const ear = new THREE.Group();
+                ear.position.set(side * (kind === 'deer' ? 0.29 : 0.26), headRadius * 0.72, 0.02);
+                head.add(ear); ears.push({ group: ear, side, baseRotation: 0 });
+                if (kind === 'rabbit') {
+                    addBall(ear, shadowFur, [side * 0.08, 0.31, 0], [0.13, 0.36, 0.085]);
+                    addBall(ear, innerEarMat, [side * 0.08, 0.32, -0.071], [0.073, 0.27, 0.022]);
+                    ear.rotation.z = -side * 0.16;
+                } else if (kind === 'fox') {
+                    addBall(ear, fur, [side * 0.045, 0.19, 0], [0.17, 0.23, 0.1]);
+                    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.27, 16), fur);
+                    tip.position.set(side * 0.045, 0.37, 0); ear.add(tip);
+                    addBall(ear, innerEarMat, [side * 0.045, 0.2, -0.09], [0.075, 0.14, 0.025]);
+                    ear.rotation.z = side * 0.18;
+                } else {
+                    addBall(ear, fur, [side * 0.13, 0.1, 0], [0.24, 0.13, 0.09]);
+                    addBall(ear, innerEarMat, [side * 0.14, 0.11, -0.072], [0.16, 0.065, 0.022]);
+                    ear.rotation.z = side * 0.65;
+                }
+                ears[ears.length - 1].baseRotation = ear.rotation.z;
+            });
+
+            // Deer details: rounded, compact antlers and soft pale coat spots.
+            if (kind === 'deer') {
+                const antlerMat = new THREE.MeshStandardMaterial({ color: 0xe7c79a, roughness: 0.74 });
+                [-1, 1].forEach(side => {
+                    const antler = new THREE.Group(); antler.position.set(side * 0.2, headRadius * 0.8, 0.01); head.add(antler);
+                    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 0.33, 10), antlerMat);
+                    stem.position.y = 0.17; stem.rotation.z = side * -0.18; antler.add(stem);
+                    [-1, 1].forEach(branch => {
+                        const tine = new THREE.Mesh(new THREE.CylinderGeometry(0.027, 0.04, 0.2, 9), antlerMat);
+                        tine.position.set(side * branch * 0.09, 0.3, 0); tine.rotation.z = side * (branch > 0 ? -0.65 : 0.7); antler.add(tine);
+                        addBall(antler, antlerMat, [side * branch * 0.16, 0.39, 0], [0.043, 0.045, 0.043]);
+                    });
+                });
+                const spotMat = new THREE.MeshStandardMaterial({ color: palette.spots, roughness: 0.9 });
+                [[-0.34, 1.04, 0.44], [-0.08, 1.13, 0.53], [0.2, 1.05, 0.48], [0.4, 0.98, 0.34]].forEach(([sx, sy, sz]) => {
+                    addBall(animal, spotMat, [sx, sy, sz], [0.085, 0.065, 0.025]);
+                });
+            }
+
+            // Big fox brush, rabbit puff, or tiny deer tail, each with a lighter tip.
+            const tail = new THREE.Group();
+            tail.position.set(0, kind === 'deer' ? 0.9 : 0.64, 0.58); animal.add(tail);
+            if (kind === 'fox') {
+                addBall(tail, fur, [0, 0.04, 0.2], [0.27, 0.26, 0.4]);
+                addBall(tail, cream, [0, 0.12, 0.5], [0.19, 0.19, 0.2]);
+                tail.rotation.x = -0.28;
+            } else if (kind === 'rabbit') {
+                addBall(tail, cream, [0, 0, 0.12], [0.2, 0.2, 0.19]);
+            } else {
+                addBall(tail, cream, [0, 0, 0.1], [0.12, 0.15, 0.15]);
+            }
+
+            // Short rounded legs and broad little paws keep feet visible above the grass.
+            const legY = kind === 'deer' ? 0.34 : 0.25;
+            const legLength = kind === 'deer' ? 0.32 : 0.24;
+            const hipY = kind === 'deer' ? 0.5 : 0.38;
+            const pawMat = kind === 'deer' ? shadowFur : fur;
+            const legs = [];
+            for (let leg = 0; leg < 4; leg++) {
+                const legX = leg < 2 ? -0.38 : 0.38;
+                const legZ = leg % 2 ? 0.34 : -0.38;
+                const pivot = new THREE.Group();
+                pivot.position.set(legX, hipY, legZ);
+                animal.add(pivot);
+                addBall(pivot, fur, [0, legY - hipY, 0], [kind === 'deer' ? 0.115 : 0.14, legLength, 0.14]);
+                addBall(pivot, pawMat, [0, 0.075 - hipY, -0.035], [0.17, 0.085, 0.2]);
+                legs.push({ pivot, phase: leg * Math.PI });
+            }
+
+            // Keep the paws just above the grassy island; gentle steps and small wandering keep them lively.
+            animal.position.set(x, 1.3, z);
+            animal.rotation.y = angle;
+            const scale = kind === 'deer' ? 0.95 : 0.94;
+            animal.scale.setScalar(scale);
+            scene.add(animal);
+            pathAnimals.push({
+                group: animal, head, ears, tail, legs, kind, baseY: animal.position.y,
+                homeX: x, homeZ: z, targetX: x, targetZ: z, homeRotation: angle,
+                moving: false, nextMoveAt: 1 + Math.random() * 4,
+                phase: Math.random() * Math.PI * 2
+            });
+        }
+        const animalPlacements = [
+            { path: 0, t: 0.3, side: 3.4, kind: 'fox' }, { path: 0, t: 0.68, side: -3.2, kind: 'rabbit' },
+            { path: 1, t: 0.24, side: -3.4, kind: 'deer' }, { path: 1, t: 0.66, side: 3.2, kind: 'rabbit' },
+            { path: 2, t: 0.34, side: 3.5, kind: 'fox' }, { path: 2, t: 0.72, side: -3.2, kind: 'deer' }
+        ];
+        animalPlacements.forEach(({ path, t, side, kind }) => {
+            const curve = pathCurves[path];
+            const point = curve.getPoint(t);
+            const tangent = curve.getTangent(t);
+            const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize().multiplyScalar(side);
+            createPathAnimal(kind, point.x + normal.x, point.z + normal.z, Math.atan2(-tangent.x, -tangent.z));
+        });
+
+        const portfolioRoutes = [
+            {
+                id: 'film', name: 'Film Score', nameZh: '影视配乐', signText: '影视配乐', signTextEn: 'FILM SCORING',
+                firstTitleZh: '关窗', firstTitleEn: 'Close the Window',
+                firstDescZh: `《关窗》是我执导并负责配乐的一部短片，呈现抑郁症患者生活中的一个片段。故事发生在一间普通的大学寝室。生日傍晚，深受抑郁症困扰的木木试图轻生，而毫不知情的室友正准备为她庆祝。短短四分钟里，木木经历病情发作，并在自杀未遂后获救；室友的情绪也随之剧烈起伏。危机暂时解除，但宿舍关系蒙上了阴影。\n\n我希望影片尽可能真实地呈现抑郁症的残酷，以及它对患者身边人的影响。木木承受着病痛折磨，室友也将在可预见的未来长期担忧、受到影响。虽然木木获救，影片整体氛围仍然压抑。\n\n作为导演兼作曲，我希望音乐延续紧张、压抑的氛围。全片以 F 小调为基础，通过合成器与少量真实乐器构建声音。音乐分为四个阶段：前两阶段不断积累冲突；第三阶段加入人声与噪声，描绘患者的内心世界；最后情绪暂时平息，钢琴和小提琴旋律延续悲伤，也暗示角色的未来仍充满变数与艰难。`,
+                firstDescEn: `Close the Window is a short film I directed and composed the score for. It offers a glimpse into the life of someone living with depression. Set in an ordinary university dorm, the story follows Mumu, who is overwhelmed by depression and considers suicide on her birthday evening. Unaware of her crisis, her roommates are preparing a celebration. In four minutes, Mumu experiences an acute episode and is rescued after a suicide attempt, while her roommates go through intense emotional swings. The immediate crisis passes, but a shadow falls over their relationships.\n\nI hope the film portrays the harsh reality of depression and its impact on those around the person living with it. Mumu suffers from the illness, while her roommates face continuing worry and emotional strain. Although Mumu is rescued, the overall atmosphere remains oppressive.\n\nAs director and composer, I wanted the score to sustain tension and unease. The film is built around F minor, combining synthesizers with a small number of acoustic instruments. Its music unfolds in four stages: the first two build toward the central conflict; voices and noise enter in the third to evoke Mumu's inner world; and, as the immediate crisis settles, piano and violin extend the sadness and suggest an uncertain, difficult future.`,
+                actionTextZh: '播放短片', actionTextEn: 'PLAY FILM', color: 0x9933ff, hex: '#9933ff', shape: 'cake'
+            },
+            {
+                id: 'game', name: 'Game Audio', signText: '游戏配乐', signTextEn: 'GAME MUSIC', nameZh: '游戏配乐',
+                firstTitleZh: '独立游戏配乐', firstTitleEn: 'Indie Game Audio',
+                firstDescZh: '互动音乐与声音设计作品展示。', firstDescEn: 'Interactive music and sound design showcase.',
+                actionTextZh: '播放音频', actionTextEn: 'PLAY AUDIO', color: 0xff4422, hex: '#ff4422', shape: 'octahedron'
+            },
+            {
+                id: 'pure', name: 'Pure Music', signText: '纯音乐', signTextEn: 'ORIGINAL MUSIC', nameZh: '纯音乐',
+                firstTitleZh: '管弦乐自由速度演奏', firstTitleEn: 'Orchestral Rubato',
+                firstDescZh: '以弦乐分部与富有情感的乐句表达为重点的纯音乐作品。', firstDescEn: 'Pure music focusing on string divisi and emotional phrasing.',
+                actionTextZh: '播放音频', actionTextEn: 'PLAY AUDIO', color: 0x00ddaa, hex: '#00ddaa', shape: 'icosahedron'
+            }
+        ];
+
+        function createSignTexture(title, lines, width = 768, height = 384, glowing = false, icon = null) {
+            const canvas = document.createElement('canvas');
+            canvas.width = width; canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            const texture = new THREE.CanvasTexture(canvas); texture.encoding = THREE.sRGBEncoding;
+            const drawText = () => {
+                ctx.clearRect(0, 0, width, height); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(12,9,18,0.82)'; ctx.shadowBlur = 1; ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 2;
+                ctx.fillStyle = glowing ? '#fff3d2' : '#382417';
+                const localizedTitle = siteLanguage === 'zh' ? title : (lines[0] || title);
+                let fontSize = Math.round(height * 0.38);
+                ctx.font = `bold ${fontSize}px "ZCOOL KuaiLe Local", "PingFang SC", sans-serif`;
+                const iconSize = icon ? Math.round(height * 0.22) : 0;
+                const textSpace = width - 56 - (icon ? iconSize + 24 : 0);
+                const measuredTitleWidth = ctx.measureText(localizedTitle).width;
+                if (measuredTitleWidth > textSpace) {
+                    fontSize = Math.floor(fontSize * textSpace / measuredTitleWidth);
+                    ctx.font = `bold ${fontSize}px "ZCOOL KuaiLe Local", "PingFang SC", sans-serif`;
+                }
+                const titleY = height * 0.5;
+                if (icon) {
+                    const titleWidth = ctx.measureText(localizedTitle).width;
+                    const totalWidth = iconSize + 15 + titleWidth;
+                    const startX = (width - totalWidth) / 2;
+                    drawRouteSignIcon(ctx, icon, startX + iconSize / 2, titleY, iconSize, glowing ? '#fff3d2' : '#382417');
+                    ctx.textAlign = 'left';
+                    ctx.strokeStyle = 'rgba(15,12,20,0.92)'; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+                    ctx.strokeText(localizedTitle, startX + iconSize + 15, titleY, width - startX - iconSize - 30);
+                    ctx.fillText(localizedTitle, startX + iconSize + 15, titleY, width - startX - iconSize - 30);
+                } else {
+                    ctx.strokeStyle = glowing ? 'rgba(15,12,20,0.92)' : 'rgba(35,18,7,0.55)'; ctx.lineWidth = glowing ? 2.5 : 1.5; ctx.lineJoin = 'round';
+                    ctx.strokeText(localizedTitle, width / 2, titleY, width - 56);
+                    ctx.fillText(localizedTitle, width / 2, titleY, width - 56);
+                }
+                ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+                texture.needsUpdate = true;
+            };
+            signTextureRedrawers.push(drawText);
+            drawText();
+            document.fonts.load(`400 ${Math.round(height * 0.38)}px "ZCOOL KuaiLe Local"`).then((faces) => {
+                if (faces.length) drawText();
+                else console.warn('ZCOOL KuaiLe font did not load; using system fallback.');
+            }).catch((error) => console.warn('Unable to load local ZCOOL KuaiLe font:', error));
+            return texture;
+        }
+
+        function drawRouteSignIcon(ctx, type, centerX, centerY, size, color) {
+            const unit = size / 54;
+            ctx.save(); ctx.translate(centerX, centerY); ctx.scale(unit, unit);
+            ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            if (type === 'film') {
+                ctx.beginPath(); ctx.roundRect(-23, -16, 46, 32, 6); ctx.fill();
+                ctx.fillStyle = 'rgba(20,14,24,0.9)';
+                for (const y of [-9, 9]) for (const x of [-16, -5, 6, 17]) ctx.fillRect(x - 2.5, y - 2, 5, 4);
+                ctx.fillRect(-8, -5, 16, 10);
+            } else if (type === 'game') {
+                ctx.beginPath(); ctx.moveTo(-15, -11); ctx.quadraticCurveTo(-21, -11, -23, -2); ctx.lineTo(-26, 10); ctx.quadraticCurveTo(-27, 18, -19, 17); ctx.lineTo(-9, 9); ctx.lineTo(9, 9); ctx.lineTo(19, 17); ctx.quadraticCurveTo(27, 18, 26, 10); ctx.lineTo(23, -2); ctx.quadraticCurveTo(21, -11, 15, -11); ctx.closePath(); ctx.fill();
+                ctx.strokeStyle = 'rgba(20,14,24,0.95)'; ctx.lineWidth = 3.5;
+                ctx.beginPath(); ctx.moveTo(-15, -3); ctx.lineTo(-15, 7); ctx.moveTo(-20, 2); ctx.lineTo(-10, 2); ctx.stroke();
+                ctx.fillStyle = 'rgba(20,14,24,0.95)'; ctx.beginPath(); ctx.arc(14, -2, 2.5, 0, Math.PI * 2); ctx.arc(19, 4, 2.5, 0, Math.PI * 2); ctx.fill();
+            } else {
+                ctx.beginPath(); ctx.moveTo(7, -20); ctx.lineTo(7, 10); ctx.stroke();
+                ctx.beginPath(); ctx.ellipse(-1, 13, 8, 5, -0.35, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(7, -19); ctx.lineTo(20, -15); ctx.lineTo(20, -7); ctx.lineTo(7, -11); ctx.closePath(); ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        const wreathLeafMat = new THREE.MeshStandardMaterial({ color: 0x47774b, emissive: 0x102a12, emissiveIntensity: 0.22, roughness: 0.78 });
+        const wreathPetalMats = [
+            new THREE.MeshStandardMaterial({ color: 0xe99a9b, emissive: 0x351013, emissiveIntensity: 0.25, roughness: 0.65 }),
+            new THREE.MeshStandardMaterial({ color: 0xffd27a, emissive: 0x392408, emissiveIntensity: 0.35, roughness: 0.65 }),
+            new THREE.MeshStandardMaterial({ color: 0xb5a2e8, emissive: 0x170c3b, emissiveIntensity: 0.25, roughness: 0.65 })
+        ];
+        const wreathCenterMat = new THREE.MeshStandardMaterial({ color: 0xffdf8a, emissive: 0x74440e, emissiveIntensity: 0.65 });
+        const woodCanvas = document.createElement('canvas'); woodCanvas.width = 512; woodCanvas.height = 256;
+        const woodCtx = woodCanvas.getContext('2d');
+        const woodGradient = woodCtx.createLinearGradient(0, 0, 0, woodCanvas.height);
+        woodGradient.addColorStop(0, '#bd8950'); woodGradient.addColorStop(0.5, '#d5a665'); woodGradient.addColorStop(1, '#855a35');
+        woodCtx.fillStyle = woodGradient; woodCtx.fillRect(0, 0, woodCanvas.width, woodCanvas.height);
+        for (let grain = 0; grain < 90; grain++) {
+            const y = Math.random() * woodCanvas.height;
+            woodCtx.strokeStyle = grain % 4 === 0 ? 'rgba(61,35,16,0.25)' : 'rgba(255,226,171,0.16)';
+            woodCtx.lineWidth = 1 + Math.random() * 3; woodCtx.beginPath(); woodCtx.moveTo(0, y);
+            woodCtx.bezierCurveTo(150, y - 8 + Math.random() * 16, 340, y - 8 + Math.random() * 16, woodCanvas.width, y); woodCtx.stroke();
+        }
+        [[106,82],[382,174]].forEach(([x,y]) => { woodCtx.strokeStyle='rgba(52,31,16,0.3)'; woodCtx.lineWidth=3; woodCtx.beginPath(); woodCtx.ellipse(x,y,24,9,.12,0,Math.PI*2); woodCtx.stroke(); });
+        const woodTexture = new THREE.CanvasTexture(woodCanvas); woodTexture.encoding = THREE.sRGBEncoding;
+        const signWoodMat = new THREE.MeshStandardMaterial({ map: woodTexture, color: 0xffe3bd, emissive: 0x8a4c20, emissiveIntensity: 0.26, roughness: 0.72, metalness: 0.02 });
+        const soilMat = new THREE.MeshStandardMaterial({ color: 0x59432d, roughness: 1 });
+        const signNailMat = new THREE.MeshStandardMaterial({ color: 0x49372d, metalness: 0.55, roughness: 0.4 });
+
+        function createRoadSign(x, z, title, lines, width, height, groundY = 1.05, arrowDirection = 0) {
+            const sign = new THREE.Group();
+            const boardY = height * 1.5;
+            const arrowDepth = arrowDirection ? height * 0.56 : 0;
+            const bodyWidth = width - arrowDepth * 0.55;
+            const bodyCenterX = arrowDirection * -arrowDepth * 0.22;
+            const roundedPlankShape = (w, h, radius) => {
+                const shape = new THREE.Shape();
+                shape.moveTo(-w / 2 + radius, -h / 2);
+                shape.lineTo(w / 2 - radius, -h / 2); shape.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + radius);
+                shape.lineTo(w / 2, h / 2 - radius); shape.quadraticCurveTo(w / 2, h / 2, w / 2 - radius, h / 2);
+                shape.lineTo(-w / 2 + radius, h / 2); shape.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - radius);
+                shape.lineTo(-w / 2, -h / 2 + radius); shape.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + radius, -h / 2);
+                return shape;
+            };
+            const board = new THREE.Mesh(new THREE.ExtrudeGeometry(roundedPlankShape(bodyWidth, height, Math.min(0.22, height * 0.12)), {
+                depth: 0.48, bevelEnabled: true, bevelSegments: 4, steps: 1, bevelSize: 0.12, bevelThickness: 0.08, curveSegments: 6
+            }), signWoodMat);
+            board.position.set(bodyCenterX, boardY, -0.24); sign.add(board);
+            if (arrowDirection) {
+                const tipX = bodyCenterX + arrowDirection * (bodyWidth / 2 + arrowDepth * 0.52);
+                const baseX = bodyCenterX + arrowDirection * (bodyWidth / 2 - 0.03);
+                const shape = new THREE.Shape();
+                shape.moveTo(baseX, boardY - height / 2); shape.lineTo(baseX, boardY + height / 2);
+                shape.lineTo(tipX, boardY); shape.closePath();
+                const arrow = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.48, bevelEnabled: true, bevelSegments: 4, steps: 1, bevelSize: 0.12, bevelThickness: 0.08, curveSegments: 6 }), signWoodMat);
+                arrow.position.z = -0.14; sign.add(arrow);
+            }
+            const face = new THREE.Mesh(new THREE.PlaneGeometry(bodyWidth - 0.22, height - 0.18), new THREE.MeshBasicMaterial({ map: createSignTexture(title, lines), side: THREE.DoubleSide, transparent: true }));
+            face.position.set(bodyCenterX, boardY, 0.34); sign.add(face);
+            const postHeight = boardY + height / 2 + 0.16;
+            const post = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.29, postHeight, 12, 1), signWoodMat);
+            post.position.set(bodyCenterX, postHeight / 2, -0.02); sign.add(post);
+            const brace = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.74, 0.25), signWoodMat);
+            brace.position.set(bodyCenterX, boardY - height / 2 - 0.28, 0); brace.rotation.z = -0.35; sign.add(brace);
+            const signGlow = new THREE.PointLight(0xffca78, 0.72, 9);
+            signGlow.position.set(bodyCenterX, boardY, 0.9); sign.add(signGlow);
+            // Carved-looking dark nail heads at the plank corners.
+            [-1,1].forEach(sx => [-1,1].forEach(sy => {
+                const nail = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 8), signNailMat);
+                nail.position.set(bodyCenterX + sx * (bodyWidth / 2 - 0.16), boardY + sy * (height / 2 - 0.15), 0.36); sign.add(nail);
+            }));
+            // Raised leaf clusters frame the plank ends; vines descend and curl around the post.
+            const leafGeo = new THREE.SphereGeometry(0.18, 10, 7);
+            const flowerGeo = new THREE.SphereGeometry(0.13, 12, 9);
+            const centerGeo = new THREE.SphereGeometry(0.065, 8, 6);
+            const decorateCluster = (cx, cy, scale = 1) => {
+                for (let i = 0; i < 7; i++) {
+                    const angle = (i / 7) * Math.PI * 2;
+                    const leaf = new THREE.Mesh(leafGeo, wreathLeafMat);
+                    leaf.position.set(cx + Math.cos(angle) * 0.28 * scale, cy + Math.sin(angle) * 0.2 * scale, 0.28);
+                    leaf.scale.set(0.68 * scale, 1.65 * scale, 0.42); leaf.rotation.z = angle + Math.PI / 2; sign.add(leaf);
+                }
+                const bloom = new THREE.Group();
+                for (let petal = 0; petal < 7; petal++) {
+                    const a = petal / 7 * Math.PI * 2;
+                    const lobe = new THREE.Mesh(flowerGeo, wreathPetalMats[(Math.round(cx * 10) + petal + 6) % wreathPetalMats.length]);
+                    lobe.position.set(Math.cos(a) * 0.16, Math.sin(a) * 0.16, 0.03); lobe.scale.set(0.82, 1.25, 0.7); bloom.add(lobe);
+                }
+                const center = new THREE.Mesh(centerGeo, wreathCenterMat); center.position.z = 0.08; bloom.add(center);
+                bloom.position.set(cx, cy, 0.48); bloom.scale.setScalar(scale); sign.add(bloom);
+            };
+            decorateCluster(bodyCenterX - bodyWidth * 0.43, boardY + height * 0.43, 0.9);
+            decorateCluster(bodyCenterX + bodyWidth * 0.42, boardY + height * 0.42, 0.82);
+            const vinePoints = [new THREE.Vector3(bodyCenterX - 0.38, 0.05, 0.22), new THREE.Vector3(bodyCenterX + 0.28, 0.45, 0.24), new THREE.Vector3(bodyCenterX - 0.25, 0.95, 0.24), new THREE.Vector3(bodyCenterX + 0.2, 1.42, 0.24), new THREE.Vector3(bodyCenterX - 0.16, boardY - height / 2 + 0.2, 0.24)];
+            sign.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(vinePoints), 36, 0.045, 6, false), wreathLeafMat));
+            for (let i = 0; i < 5; i++) {
+                const leaf = new THREE.Mesh(leafGeo, wreathLeafMat); leaf.position.set(bodyCenterX + (i % 2 ? 0.22 : -0.22), 0.28 + i * 0.34, 0.34);
+                leaf.scale.set(0.72, 1.45, 0.42); leaf.rotation.z = i % 2 ? -0.7 : 0.7; sign.add(leaf);
+            }
+            decorateCluster(bodyCenterX - 0.62, 0.42, 0.72);
+            decorateCluster(bodyCenterX + 0.58, 0.3, 0.68);
+            const soil = new THREE.Mesh(new THREE.SphereGeometry(0.78, 12, 8), soilMat);
+            soil.position.set(bodyCenterX, 0.16, 0.05); soil.scale.set(1.25, 0.35, 0.72); sign.add(soil);
+            for (let i = 0; i < 9; i++) {
+                const grass = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.62 + (i % 3) * 0.12, 5), wreathLeafMat);
+                grass.position.set(bodyCenterX - 0.95 + i * 0.23, 0.34, 0.18 + (i % 2) * 0.1); grass.rotation.z = (i % 2 ? -1 : 1) * 0.22; sign.add(grass);
+            }
+            sign.position.set(x, Math.min(groundY, 1.05), z); scene.add(sign); return sign;
+        }
+
+        const perchedBirds = [];
+        const foragingBirds = [];
+        function createInfoStone(x, z) {
+            const monument = new THREE.Group();
+            const stoneMat = new THREE.MeshStandardMaterial({ color: 0x49445f, roughness: 0.88, emissive: 0x292448, emissiveIntensity: 0.42, flatShading: true });
+            const edgeGlowMat = new THREE.MeshStandardMaterial({ color: 0x9d82ff, emissive: 0x8866ff, emissiveIntensity: 1.15, roughness: 0.38 });
+            // A naturally irregular, tapered island stone: broad and oval at the foot, narrowing toward its crown.
+            const profile = [
+                new THREE.Vector2(0, 0), new THREE.Vector2(2.28, 0.05), new THREE.Vector2(2.22, 0.35),
+                new THREE.Vector2(1.98, 0.82), new THREE.Vector2(1.76, 1.55), new THREE.Vector2(1.53, 2.45),
+                new THREE.Vector2(1.34, 3.35), new THREE.Vector2(1.16, 4.25), new THREE.Vector2(0.96, 5.15),
+                new THREE.Vector2(0.72, 5.55), new THREE.Vector2(0, 5.68)
+            ];
+            const monolith = new THREE.Mesh(new THREE.LatheGeometry(profile, 9), stoneMat);
+            monolith.scale.set(1.08, 1, 0.82); monolith.rotation.y = Math.PI / 14; monument.add(monolith);
+            const runeBand = new THREE.Mesh(new THREE.TorusGeometry(1.72, 0.055, 8, 48), edgeGlowMat);
+            runeBand.rotation.x = Math.PI / 2; runeBand.position.set(0, 1.1, 0); runeBand.scale.set(1, 0.82, 1); monument.add(runeBand);
+            const upperRune = new THREE.Mesh(new THREE.TorusGeometry(1.28, 0.035, 7, 40), edgeGlowMat);
+            upperRune.rotation.x = Math.PI / 2; upperRune.position.set(0, 2.75, 0); upperRune.scale.set(1, 0.82, 1); monument.add(upperRune);
+            const inscription = new THREE.Mesh(new THREE.PlaneGeometry(2.28, 0.92), new THREE.MeshBasicMaterial({ map: createSignTexture('个人信息', ['ABOUT ME'], 768, 384, true), transparent: true, side: THREE.DoubleSide }));
+            inscription.position.set(0, 4.12, 1.02); monument.add(inscription);
+            // Small luminous runes flank the inscription and sit close to the stone surface.
+            const inscriptionGemMat = new THREE.MeshStandardMaterial({ color: 0xc8aaff, emissive: 0x8a58ff, emissiveIntensity: 1.35, roughness: 0.28 });
+            [-1, 1].forEach(side => {
+                const runeGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), inscriptionGemMat);
+                runeGem.position.set(side * 1.28, 4.12, 0.32); runeGem.rotation.set(0.2, side * 0.35, Math.PI / 4); monument.add(runeGem);
+                const runeLine = new THREE.Line(
+                    new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(side * 1.16, 3.84, 0.46),
+                        new THREE.Vector3(side * 1.1, 4.12, 0.54),
+                        new THREE.Vector3(side * 1.16, 4.4, 0.46)
+                    ]),
+                    new THREE.LineBasicMaterial({ color: 0xc09aff, transparent: true, opacity: 0.92 })
+                );
+                monument.add(runeLine);
+            });
+            // Layered stone chips, mineral seams and crystal outcrops add a weathered, magical surface.
+            const stoneLightMat = new THREE.MeshStandardMaterial({ color: 0x716a84, roughness: 0.9, flatShading: true });
+            const stoneDarkMat = new THREE.MeshStandardMaterial({ color: 0x302d43, roughness: 0.95, flatShading: true });
+            const chips = [
+                [-1.25,0.58,1.15,0.42], [1.12,0.72,1.05,0.36], [-0.95,1.72,1.13,0.3],
+                [0.92,2.25,1.02,0.32], [-0.84,3.05,0.91,0.27], [0.88,3.38,0.82,0.25],
+                [-0.58,4.86,0.66,0.2], [0.62,4.72,0.71,0.24]
+            ];
+            chips.forEach(([cx, cy, cz, size], index) => {
+                const chip = new THREE.Mesh(new THREE.DodecahedronGeometry(size, 0), index % 3 === 0 ? stoneLightMat : stoneDarkMat);
+                chip.position.set(cx, cy, cz); chip.scale.set(1.15, 0.72, 0.42); chip.rotation.set(index * 0.31, index * 0.47, index * 0.22); monument.add(chip);
+            });
+            const mineralMats = [
+                new THREE.MeshStandardMaterial({ color: 0x70d9ef, emissive: 0x1489ad, emissiveIntensity: 1.0, roughness: 0.28 }),
+                new THREE.MeshStandardMaterial({ color: 0xc39bff, emissive: 0x6639d1, emissiveIntensity: 1.0, roughness: 0.28 })
+            ];
+            [[-1.58,0.65,0.72],[1.52,0.8,0.76],[-1.14,1.05,0.98],[1.12,1.18,0.88],[0.28,5.32,0.72]].forEach(([cx,cy,cz], index) => {
+                const shard = new THREE.Mesh(new THREE.OctahedronGeometry(index === 4 ? 0.4 : 0.34 + (index % 2) * 0.09, 0), mineralMats[index % mineralMats.length]);
+                shard.position.set(cx, cy, cz); shard.scale.set(0.78, 1.6, 0.72); shard.rotation.z = index * 0.6; monument.add(shard);
+            });
+            const seamMat = new THREE.MeshBasicMaterial({ color: 0x9bdfff, transparent: true, opacity: 0.58 });
+            [[[-1.35,1.35,1.08],[-1.05,1.58,1.12],[-1.18,1.9,1.08],[-0.94,2.12,1.02]],
+             [[1.36,2.7,0.92],[1.08,2.94,0.98],[1.2,3.2,0.92],[0.98,3.42,0.86]]].forEach(points => {
+                const curve = new THREE.CatmullRomCurve3(points.map(point => new THREE.Vector3(...point)));
+                monument.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 18, 0.025, 5, false), seamMat));
+            });
+            const perch = new THREE.Mesh(new THREE.DodecahedronGeometry(0.82, 0), stoneLightMat);
+            perch.position.set(0, 5.58, 0); perch.scale.set(1.08, 0.24, 0.76); monument.add(perch);
+            // A small low-poly night bird perches on the crown, facing visitors.
+            const bird = new THREE.Group();
+            const birdWings = [];
+            const birdFeet = [];
+            let birdHeadRef;
+            const birdBodyMat = new THREE.MeshStandardMaterial({ color: 0x27394d, roughness: 0.74, flatShading: true });
+            const birdLightMat = new THREE.MeshStandardMaterial({ color: 0x7892aa, roughness: 0.68, flatShading: true });
+            const birdBody = new THREE.Mesh(new THREE.SphereGeometry(0.43, 10, 8), birdBodyMat);
+            birdBody.scale.set(0.98, 0.68, 0.72); bird.add(birdBody);
+            const birdHead = new THREE.Group();
+            birdHead.position.set(0, 0.25, 0.3); bird.add(birdHead);
+            const headShell = new THREE.Mesh(new THREE.SphereGeometry(0.235, 10, 8), birdLightMat);
+            birdHead.add(headShell);
+            birdHeadRef = birdHead;
+            for (let side = -1; side <= 1; side += 2) {
+                const wingPivot = new THREE.Group();
+                wingPivot.position.set(side * 0.25, 0.02, -0.04); bird.add(wingPivot);
+                const wing = new THREE.Mesh(new THREE.SphereGeometry(0.29, 9, 7), birdLightMat);
+                wing.position.x = side * 0.17; wing.scale.set(0.42, 0.5, 0.96); wingPivot.add(wing);
+                birdWings.push({ mesh: wingPivot, side });
+                const eyeWhite = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xfff1cd }));
+                eyeWhite.position.set(side * 0.115, 0.04, 0.23); birdHead.add(eyeWhite);
+                const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshBasicMaterial({ color: 0x15111b }));
+                pupil.position.set(side * 0.115, 0.04, 0.29); birdHead.add(pupil);
+                const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 0.2, 6), new THREE.MeshStandardMaterial({ color: 0xc88955 }));
+                foot.position.set(side * 0.14, -0.34, 0.04); bird.add(foot);
+                birdFeet.push({ mesh: foot, side, baseY: foot.position.y });
+            }
+            const beakMat = new THREE.MeshStandardMaterial({ color: 0xffbd64, emissive: 0x6c3210, emissiveIntensity: 0.25 });
+            const beak = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 5), beakMat);
+            beak.rotation.x = Math.PI / 2; beak.position.set(0, -0.05, 0.29); birdHead.add(beak);
+            const lowerBeakPivot = new THREE.Group(); lowerBeakPivot.position.set(0, -0.13, 0.3); birdHead.add(lowerBeakPivot);
+            const lowerBeak = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.18, 5), beakMat);
+            lowerBeak.rotation.x = Math.PI / 2; lowerBeak.position.set(0, -0.045, 0.075); lowerBeakPivot.add(lowerBeak);
+            const tail = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.48, 5), birdBodyMat);
+            tail.rotation.x = -Math.PI / 2; tail.position.set(0, -0.03, -0.55); bird.add(tail);
+            bird.position.set(0, 6.02, 0.04); bird.rotation.y = 0; monument.add(bird);
+            perchedBirds.push({ bird, head: birdHeadRef, jaw: lowerBeakPivot, wings: birdWings, feet: birdFeet, phase: Math.random() * 5.5 });
+            for (let side = -1; side <= 1; side += 2) {
+                const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.36, 0), edgeGlowMat);
+                crystal.position.set(side * 1.1, 5.52, 0.62); crystal.rotation.z = Math.PI / 8; monument.add(crystal);
+            }
+            const halo = new THREE.PointLight(0xa98aff, 2.1, 18); halo.position.set(0, 4.3, 2.1); monument.add(halo);
+            const footLight = new THREE.PointLight(0x74cfff, 0.8, 10); footLight.position.set(0, 0.7, 0); monument.add(footLight);
+            monument.position.set(x, 1.05, z); scene.add(monument); return monument;
+        }
+
+        function createMushroomRoute(x, z, title, subtitle, routeIndex) {
+            const marker = new THREE.Group();
+            const palettes = [
+                { cap: 0xff86c8, glow: 0xff4fae, stem: 0xe6c7ff },
+                { cap: 0x83ddff, glow: 0x45caff, stem: 0xc6f4ff },
+                { cap: 0xffd276, glow: 0xffb446, stem: 0xffedc2 }
+            ];
+            const palette = palettes[routeIndex];
+            const stemMat = new THREE.MeshStandardMaterial({ color: palette.stem, emissive: palette.glow, emissiveIntensity: 0.55, roughness: 0.42 });
+            const capMat = new THREE.MeshStandardMaterial({ color: palette.cap, emissive: palette.glow, emissiveIntensity: 1.35, roughness: 0.34 });
+            const spotMat = new THREE.MeshStandardMaterial({ color: 0xfff4d9, emissive: 0xffffff, emissiveIntensity: 1.4 });
+            const mushrooms = [
+                { x: -0.9, h: 1.35, r: 0.5 }, { x: 0.05, h: 1.95, r: 0.67 }, { x: 0.92, h: 1.15, r: 0.44 }
+            ];
+            mushrooms.forEach((m, index) => {
+                const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.2, m.h, 10), stemMat);
+                stem.position.set(m.x, m.h / 2 + 0.12, 0); marker.add(stem);
+                const cap = new THREE.Mesh(new THREE.SphereGeometry(m.r, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2), capMat);
+                cap.scale.y = 0.62; cap.position.set(m.x, m.h + 0.12, 0); marker.add(cap);
+                for (let spot = 0; spot < 4; spot++) {
+                    const a = (spot / 4) * Math.PI * 2 + index;
+                    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 6), spotMat);
+                    dot.position.set(m.x + Math.cos(a) * m.r * 0.48, m.h + 0.12 + Math.sin(a) * m.r * 0.2, Math.sin(a) * m.r * 0.66); marker.add(dot);
+                }
+            });
+            // Return to the clean floating bilingual label; keep the route-specific icon and mushroom glow.
+            const icon = ['film', 'game', 'music'][routeIndex];
+            const label = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 1.05), new THREE.MeshBasicMaterial({ map: createSignTexture(title, [subtitle], 768, 300, true, icon), transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+            label.position.set(0, 2.75, 0.16); marker.add(label);
+
+            // Four small birds forage in a loose ring around the mushroom cluster.
+            const birdColors = [0xd8b98b, 0xc9a4d8, 0xa6c4ca, 0xe5c17d];
+            const birdBeakMat = new THREE.MeshStandardMaterial({ color: 0xffc35c, roughness: 0.55, emissive: 0x6a3510, emissiveIntensity: 0.25 });
+            const birdEyeMat = new THREE.MeshBasicMaterial({ color: 0x211923 });
+            for (let i = 0; i < 4; i++) {
+                const bird = new THREE.Group();
+                const birdBodyMat = new THREE.MeshStandardMaterial({ color: birdColors[i], roughness: 0.76, flatShading: true });
+                const wingMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(birdColors[i]).multiplyScalar(0.76), roughness: 0.8, flatShading: true });
+                const body = new THREE.Mesh(new THREE.SphereGeometry(0.29, 9, 7), birdBodyMat);
+                body.scale.set(0.88, 0.7, 1.18); body.position.set(0, 0.25, 0); bird.add(body);
+                const head = new THREE.Group(); head.position.set(0, 0.34, 0.27); bird.add(head);
+                const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.17, 9, 7), birdBodyMat); head.add(headMesh);
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.025, 6, 5), birdEyeMat); eye.position.set(0.11, 0.025, 0.105); head.add(eye);
+                const beak = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.19, 5), birdBeakMat);
+                beak.rotation.x = Math.PI / 2; beak.position.set(0, -0.035, 0.22); head.add(beak);
+                const jaw = new THREE.Group(); jaw.position.set(0, -0.09, 0.21); head.add(jaw);
+                const lowerBeak = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.12, 5), birdBeakMat);
+                lowerBeak.rotation.x = Math.PI / 2; lowerBeak.position.set(0, -0.025, 0.045); jaw.add(lowerBeak);
+                const wings = [];
+                for (const side of [-1, 1]) {
+                    const wingPivot = new THREE.Group(); wingPivot.position.set(side * 0.19, 0.28, -0.02); bird.add(wingPivot);
+                    const wing = new THREE.Mesh(new THREE.SphereGeometry(0.19, 8, 6), wingMat);
+                    wing.scale.set(0.58, 0.7, 1.2); wing.position.x = side * 0.045; wingPivot.add(wing);
+                    wings.push({ pivot: wingPivot, side });
+                    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.15, 5), birdBeakMat);
+                    leg.position.set(side * 0.09, 0.075, 0.06); bird.add(leg);
+                }
+                const tail = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.28, 5), wingMat);
+                tail.rotation.x = -Math.PI / 2; tail.position.set(0, 0.27, -0.31); bird.add(tail);
+                const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+                const radius = 1.72 + (i % 2) * 0.16;
+                const bx = Math.cos(angle) * radius, bz = Math.sin(angle) * radius;
+                bird.position.set(bx, 0.12, bz);
+                bird.rotation.y = Math.atan2(-bx, -bz);
+                bird.scale.setScalar(0.9);
+                marker.add(bird);
+                foragingBirds.push({ bird, head, jaw, wings, baseY: bird.position.y, phase: i * 1.47 + routeIndex * 0.83 });
+            }
+            const glow = new THREE.PointLight(palette.glow, 1.35, 10); glow.position.set(0, 1.5, 0.2); marker.add(glow);
+            marker.scale.setScalar(1.32);
+            marker.position.set(x, 1.05, z);
+            pathAnimalStaticObstacles.push({ x, z, radius: 3.8 });
+            if (routeIndex === 0 || routeIndex === 1) {
+                // Keep the film and game route mushroom clusters visible by moving nearby pines out of the way.
+                pineTreePositions.forEach((tree, treeIndex) => {
+                    if (Math.hypot(x - tree.x, z - tree.z) >= 6) return;
+                    let relocation = null;
+                    let bestScore = -Infinity;
+                    for (const radius of [7, 9, 11, 13, 15]) {
+                        for (let step = 0; step < 32; step++) {
+                            const angle = step * Math.PI / 16;
+                            const nx = x + Math.cos(angle) * radius;
+                            const nz = z + Math.sin(angle) * radius;
+                            if (Math.hypot(nx, nz) > grassRadius - 2) continue;
+                            const pathGap = allPathPoints.reduce((nearest, point) => Math.min(nearest, Math.hypot(nx - point.x, nz - point.z)), Infinity);
+                            if (pathGap < 4) continue;
+                            const treeGap = pineTreePositions.reduce((nearest, other, index) => index === treeIndex ? nearest : Math.min(nearest, Math.hypot(nx - other.x, nz - other.z)), Infinity);
+                            if (treeGap < 4) continue;
+                            const signGap = Math.hypot(nx - x, nz - z);
+                            const score = Math.min(pathGap, treeGap, signGap);
+                            if (score > bestScore) { bestScore = score; relocation = { x: nx, z: nz }; }
+                        }
+                    }
+                    if (relocation) {
+                        tree.x = relocation.x; tree.z = relocation.z;
+                        tree.group.position.set(relocation.x, 0, relocation.z);
+                    }
+                });
+            }
+            scene.add(marker); return marker;
+        }
+
+        // Put the introduction just before the fork junction so visitors meet it first.
+        const profilePosition = new THREE.Vector3(-4.5, 1.05, pierZ - 3.5);
+        createInfoStone(profilePosition.x, profilePosition.z);
+        pathAnimalStaticObstacles.push({ x: profilePosition.x, z: profilePosition.z, radius: 4.2 });
+
+        // Branch labels stand beside the path near each fork entrance.
+        portfolioRoutes.forEach((route, routeIndex) => {
+            const curve = pathCurves[routeIndex];
+            const point = curve.getPoint(0.14);
+            const tangent = curve.getTangent(0.14);
+            const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize().multiplyScalar(4.2);
+            createMushroomRoute(point.x + side.x, point.z + side.z, route.signText, route.signTextEn, routeIndex);
+        });
+
+        const courageDescZh = "本作为“这页纸记得 叠纸游戏2026创作大赛”参赛作品\n\n\n创作背景\n本作灵感源于暖暖在《奇迹暖暖》《闪耀暖暖》《无限暖暖》三部曲中，穿越奇迹大陆后开启的那段未知而瑰丽的旅途。暖暖身处陌生世界，始终怀揣着出发的勇气与帮助他人的善意，这份特质既鼓舞了奇迹大陆的原住民们，也打动了屏幕外的玩家。本作以暖暖这场奇幻却暗藏危险的冒险旅途为基底，力求展现暖暖在拯救世界的旅程中，初遇住民、遭遇险境、战胜强敌、再度出发的勇气之路。\n\n故事简要\n用魔法穿过时空的裂隙，暖暖踏入奇迹大陆。\n这里民风淳朴，居民热情友善，她很快便卸下异乡人的拘谨，与当地居民打成一片，欢歌载舞。不料蛰伏多时的黑暗势力骤然降临，撕裂了庆典的欢腾，将恐惧与阴影洒向大地。\n暖暖为守护奇迹大陆挺身而出，以一己之身迎向汹涌暗潮。历经鏖战，她终于感悟神明的力量，在绝境中击退黑暗势力。\n当最后一缕暗影消散，阳光重新照耀大地，朋友们用最热烈的欢呼和盛大的庆典表达他们的敬意与感激。火光彻夜不息，歌声久久回荡，仿佛一切都未曾改变。\n然而远方的命运从未停止召唤，未知的谜题仍等待暖暖去解答。伙伴温柔的埙音如雾弥漫，诉说离别，亦为下一段冒险故事埋下伏笔。\n\n音乐结构\n\nA段 0:00-0:36 44拍\n前导段，描绘暖暖穿越之时。配器运用弦乐、木管、竖琴和少量打击乐器，同时大量运用好莱坞和弦营造魔法风格。以竖琴solo作为AB段的桥梁，柔和降落到异世界的草地。\n\nB段 0:36-1:41 43拍\n凯尔特风格。初到异世界。配器采用特色爱尔兰锡哨、爱尔兰竖琴、手鼓等，以打击乐solo和铜管的四次号角拉开冒险的帷幕。使用混合利底亚调式，营造轻盈和雀跃感。在推进过程中加入人声的呼喊与欢呼，展现奇迹大陆的淳朴热情民风。结尾以连续的下行音阶暗示黑暗势力的悄然降临。\n\nC段 1:41-3:12 45拍\\44拍\n风雨已来。由混合利底亚转为小调，铜管、合唱人声接管音乐，增加史诗感与紧张感。情绪在节奏型的重复和乐器逐层加入中不断推进，推向高潮后骤收，改为平稳的44拍。\n人声大意：\n黑暗已来\\何以抗争\\黑暗已来\\何以抗争\n战斗\\战斗\\守护家园\\战斗\\战斗\\怒火不息\n继承神明力量\\黑暗已来\\以此抗争\n\nB’段 3:12-3:59 43拍\n复现B段主旋律，同时调式变为利底亚调式，整体配器和声部相较B段更为丰富。结尾弱收。";
+        const courageDescEn = "This work is an entry for \"This Page Remembers: Papergames 2026 Creation Contest\"\n\nCreation Background\nThis work draws inspiration from the unknown and magnificent journey that Nikki embarks on after crossing into the Miraland in the trilogy of 《Miracle Nikki》, 《Shining Nikki》 and 《Infinity Nikki》. Stranded in an unfamiliar world, Nikki always holds the courage to set out and the kindness to help others. This trait has not only inspired the indigenous people of Miraland, but also touched the players beyond the screen. Based on Nikki's fantastical yet perilous adventure, this work strives to present the courageous path Nikki takes during her journey to save the world, where she meets inhabitants for the first time, encounters dangers, defeats powerful enemies, and sets off again.\n\nStory Summary\nUsing magic to pass through the rift of time and space, Nikki steps into Miraland.\nThe local people here are honest and simple, and the residents are warm and friendly. She quickly lets go of the awkwardness of being a stranger, mingles with the local residents, singing and dancing merrily. Unexpectedly, the dark forces that have been dormant for a long time suddenly descend, tearing apart the jollity of the celebration and spreading fear and shadow across the land.\nNikki steps forward to protect Miraland, facing the surging dark tide alone. After a fierce battle, she finally comprehends the power of the deities and repels the dark forces in the desperate situation.\nWhen the last wisp of shadow dissipates and the sun shines on the earth again, friends express their respect and gratitude with the warmest cheers and a grand celebration. The fire burns all night long, and the singing lingers for a long time, as if nothing has ever changed.\nHowever, the distant fate never stops calling, and unknown puzzles still wait for Nikki to solve. The gentle sound of the xun played by her companions lingers like mist, conveying the parting and foreshadowing the next adventure story.\n\nMusic Structure\n\nSection A 0:00-0:36 4/4 \nIntroductory segment, depicting the moment when Nikki travels through time and space. Orchestration includes strings, woodwinds, harp and a small amount of percussion instruments, while a large number of Hollywood chords are used to create a magical style. A harp solo serves as the bridge between Section A and Section B, softly leading to the grassland of the other world.\n\nSection B 0:36-1:41 3/4 \nCeltic style, depicting the first arrival in the other world. Orchestration adopts characteristic Irish tin whistle, Irish harp, hand drum, etc. A percussion solo and four blasts of brass horns draw the curtain of the adventure. The Mixolydian mode is used to create a light and joyful feeling. In the progression, vocal shouts and cheers are added to show the simple and warm folk customs of Miraland. The ending uses a continuous descending scale to imply the quiet arrival of the dark forces.\n\nSection C 1:41-3:12 5/4 and 4/4 \nThe storm has arrived. The mode shifts from Mixolydian to minor, with brass and chorus vocals taking over the music, enhancing the epic and tense atmosphere. The emotion keeps building up through the repetition of rhythmic patterns and the gradual addition of instruments, then cuts off abruptly after reaching the climax, switching to a steady 4/4 time signature.\n\nGeneral meaning of the vocals:\nDarkness has come \\ How can we fight back \\ Darkness has come \\ How can we fight back\nFight \\ Fight \\ Guard our home \\ Fight \\ Fight \\ Wrath never ceases\nInherit the power of the deities \\ Darkness has come \\ Fight back with this power\n\nSection B' 3:12-3:59 3/4 \nReprises the main melody of Section B, while the mode changes to Lydian, and the overall orchestration and vocal parts are richer than those of Section B. The section ends with a fade-out.";
+        const odeDescZh = "本作为“这页纸记得 叠纸游戏2026创作大赛”参赛作品\n\n\n背景介绍\n\n一 关卡玩法\n\n玩家战胜小怪进入BOSS房，战胜BOSS后取得胜利\n\n二 剧情叙事\n\n虔诚的信徒通过弹奏管风琴来歌颂他们的造物主，他们的琴声和歌声通过音箱永不停歇的扩音传到世界各地，但音箱因为不停工作罢工造反，反而控制信徒攻击前来修理音箱的主角。\n\n三 美术风格\n\n整体为黄铜+蒸汽机械质感，小怪、音箱BOSS、平台等物体均为黄铜制造，蒸汽驱动。\n特殊说明：\n· 小怪弹奏管风琴\n· 平台为蒸汽支撑，在踏上\\离开时会放气\\充气\n· BOSS发射蒸汽弹\n· 其他音效说明详见视频\n\n\n注：篇幅限制并未在此简介展示更多音乐音效思路介绍，详情可点击下方链接访问此作品ggac官网获取详细说明";
+        const odeDescEn = "This work is an entry for \"This Page Remembers: Papergames 2026 Creation Contest\"\n\nBackground Introduction\n\nI. Level Gameplay\n\nPlayers defeat minions to enter the BOSS room, and win the victory after defeating the BOSS.\n\nII. Plot Narrative\n\nDevout believers sing praises to their Creator by playing the pipe organ. Their music and singing are continuously amplified through speakers and spread to all parts of the world. However, the speakers go on strike and rebel due to non-stop operation, and instead control the believers to attack the protagonist who comes to repair the speakers.\n\nIII. Art Style\n\nThe overall style features brass + steam mechanical texture. Minions, speaker BOSS, platforms and other objects are all made of brass and driven by steam.\n\nSpecial Notes:\n\nMinions play the pipe organ. The platform is supported by steam, which will deflate\\inflate when stepped on\\left. The BOSS launches steam bombs. For other sound effect descriptions, please refer to the video for details.\n\nNote: Due to space limitations, more ideas about music and sound effects are not shown in this introduction. For details, you can click the link below to visit the official GGAC website of this work for detailed descriptions.";
+        const cosmicDescZh = "本作为“Ludum Dare 59”参赛作品\n\n\n背景介绍\n\n一 关卡玩法\n\n玩家通过操纵飞船在太空捡垃圾并售卖，换取妻子遗留下来的信息与自己的记忆\n\n二 剧情叙事\n\n玩家为在太空进行垃圾回收的飞船员工，已经身患重病，在完成此次捡垃圾工作后将会死去。由于妻子的过世，他原本想安安静静得死在太空，成为新的太空垃圾，但妻子生前留下的信息动摇了他的想法……\n\n三 音乐音效设计思路\n\n由于比赛只有三天的制作时间，因此更多的聚焦在音乐效果的简单呈现。音乐风格保持合成器加少量真实乐器，力求营造孤寂的太空感。音效设计较少，仅设计抓取、丢弃、爆炸等简单音效。\n\n遗憾的是由于时间紧迫，大部分音乐音效并未实装。视频中展现全部的音乐效果，游戏Ludum Dare官网链接可通过下方按钮进入。";
+        const cosmicDescEn = "This work is an entry for \"Ludum Dare 59\"\n\nBackground Introduction\n\nI. Level Gameplay\n\nPlayers control a spaceship to collect and sell garbage in space, in exchange for the information left by his wife and his own memories.\n\nII. Plot Narrative\n\nThe player is a spaceship employee engaged in garbage recycling in space, who is already seriously ill and will die after completing this garbage collection work. Due to the passing of his wife, he originally wanted to die quietly in space and become new space garbage, but the information left by his wife before her death shook his mind...\n\nIII. Music and Sound Effect Design Concept\n\nSince the production time of the competition is only three days, more focus is placed on the simple presentation of music effects. The music style adopts synthesizers plus a small number of real instruments, striving to create a lonely sense of space. There are few sound effect designs, only simple sound effects such as grabbing, discarding, and explosion are designed.\n\nUnfortunately, due to the tight schedule, most of the music and sound effects have not been implemented. \n\nAll the music effects are shown in the video, and the official Ludum Dare website link for the game can be accessed via the button below.";
+        const portfolioData = [];
+        // Only place projects that have real content; future works can be added here when ready.
+        const routeTimes = [0.32, 0.60];
+        portfolioRoutes.forEach((route, routeIndex) => {
+            routeTimes.forEach((time, itemIndex) => {
+                if (route.id === 'pure' && itemIndex === 1) return;
+                const first = itemIndex === 0;
+                const isDive = route.id === 'film' && itemIndex === 1;
+                const isOde = route.id === 'game' && itemIndex === 0;
+                const isCosmic = route.id === 'game' && itemIndex === 1;
+                const isPaperCrane = route.id === 'pure' && itemIndex === 0;
+                const isOrchestral = route.id === 'pure' && itemIndex === 1;
+                const ordinal = String(itemIndex + 1).padStart(2, '0');
+                const titleZh = isCosmic ? 'Cosmic Signal' : (isOde ? '机械颂歌' : (isDive ? 'DIVE' : (isPaperCrane ? '勇气 命运 远方' : (isOrchestral ? route.firstTitleZh : (first ? route.firstTitleZh : `${route.nameZh} · 作品 ${ordinal}（占位）`)))));
+                const titleEn = isCosmic ? 'Cosmic Signal' : (isOde ? 'Ode to Machinery' : (isDive ? 'DIVE' : (isPaperCrane ? 'Courage · Destiny · Faraway' : (isOrchestral ? route.firstTitleEn : (first ? route.firstTitleEn : `${route.name} · Work ${ordinal} (Placeholder)`)))));
+                const descZh = isCosmic ? cosmicDescZh : (isOde ? odeDescZh : (isDive
+                    ? `《Dive》是林俊健执导的一部动画作品。我被这部作品里优美的色彩和创意所吸引，因此选择它来重新制作音效与配乐。\n\n音效：采用不同的水下与海洋音效来构建水环境的氛围，同时设计太空音效，打造出兼具宇宙感与科技感的水下太空环境。\n\n配乐：陆地使用真实乐器，水下场景则使用电子乐器或合成器，以此区分两种场景。在新的音乐风格切入之前，加入一段短暂停顿。\n\n在A部分和C部分的开头，角色处于陆地上时，以长笛作为主乐器，营造平和宁静的氛围。停顿过后，小调转为大调，同时引入包含鼓、电吉他、电钢琴、贝斯以及其他特殊合成器的全新编曲。`
+                    : (isPaperCrane ? courageDescZh : (isOrchestral ? route.firstDescZh : (first ? route.firstDescZh : `时间顺序占位作品 ${ordinal}。后续补充真实作品信息。`)))));
+                const descEn = isCosmic ? cosmicDescEn : (isOde ? odeDescEn : (isDive
+                    ? `Diving is an animation directed by Junjian Lin. I was attracted by the beautiful colors and ideas in this work, so I chose it to rescore the sound and music.\n\nFor the sound, I used different underwater and sea effects to build the atmosphere of water, and designed space sounds to create a cosmic and technical space room.\n\nFor the music, I used real instruments for scenes on the ground and electronic instruments or synthesizers for underwater scenes to distinguish them. I also added a short pause when the character decided to chase the star, before entering a new musical style.\n\nAt the beginning of Parts A and part C, when the character was on land, flute is the main instrument to create a peaceful and calm mood. After the pause, I shifted from minor to major to represent the change in the character’s mood, introducing a new arrangement with drums, electric guitar, electric piano, bass, and other special synthesizers.`
+                    : (isPaperCrane ? courageDescEn : (isOrchestral ? route.firstDescEn : (first ? route.firstDescEn : `Chronological portfolio placeholder ${ordinal}. Project details will be added later.`)))));
+                let geo;
+                if (route.shape === 'knot') geo = new THREE.TorusKnotGeometry(1.1 + itemIndex * 0.12, 0.35, 56, 12);
+                else if (route.shape === 'octahedron') geo = new THREE.OctahedronGeometry(1.25 + itemIndex * 0.12, 0);
+                else geo = new THREE.IcosahedronGeometry(1.25 + itemIndex * 0.12, 0);
+                // Place DIVE farther along the film branch so its display has clear front-to-back spacing from the cake.
+                const markerTime = isDive ? 0.78 : (isCosmic ? 0.66 : time);
+                const pathPoint = pathCurves[routeIndex].getPoint(markerTime);
+                const pathTangent = pathCurves[routeIndex].getTangent(markerTime);
+                const roadsideDirection = new THREE.Vector3(-pathTangent.z, 0, pathTangent.x).normalize();
+                const roadsideOffset = roadsideDirection.clone().multiplyScalar(itemIndex % 2 === 0 ? -4.8 : 4.8);
+                let markerPosition = pathPoint.clone().add(roadsideOffset);
+                if (route.id === 'film' && itemIndex === 0) {
+                    // Move only trees that intersect the wide, tilted cake display.
+                    pineTreePositions.forEach((tree, treeIndex) => {
+                        if (Math.hypot(markerPosition.x - tree.x, markerPosition.z - tree.z) >= 8.5) return;
+                        let relocation = null;
+                        let bestScore = -Infinity;
+                        for (const radius of [9, 11, 13, 15]) {
+                            for (let step = 0; step < 32; step++) {
+                                const angle = step * Math.PI / 16;
+                                const x = markerPosition.x + Math.cos(angle) * radius;
+                                const z = markerPosition.z + Math.sin(angle) * radius;
+                                if (Math.hypot(x, z) > grassRadius - 2) continue;
+                                const pathGap = allPathPoints.reduce((nearest, point) => Math.min(nearest, Math.hypot(x - point.x, z - point.z)), Infinity);
+                                if (pathGap < 4) continue;
+                                const treeGap = pineTreePositions.reduce((nearest, other, index) => index === treeIndex ? nearest : Math.min(nearest, Math.hypot(x - other.x, z - other.z)), Infinity);
+                                if (treeGap < 4) continue;
+                                const cakeGap = Math.hypot(x - markerPosition.x, z - markerPosition.z);
+                                const score = Math.min(pathGap, treeGap, cakeGap);
+                                if (score > bestScore) { bestScore = score; relocation = { x, z }; }
+                            }
+                        }
+                        if (relocation) {
+                            tree.x = relocation.x; tree.z = relocation.z;
+                            tree.group.position.set(relocation.x, 0, relocation.z);
+                        }
+                    });
+                }
+                if (isOde) {
+                    // Keep nearby pines outside the gear's full rotating outline and move only the colliding trees.
+                    pineTreePositions.forEach((tree, treeIndex) => {
+                        if (Math.hypot(markerPosition.x - tree.x, markerPosition.z - tree.z) >= 8.5) return;
+                        let relocation = null;
+                        let bestScore = -Infinity;
+                        for (const radius of [9, 11, 13, 15]) {
+                            for (let step = 0; step < 32; step++) {
+                                const angle = step * Math.PI / 16;
+                                const x = markerPosition.x + Math.cos(angle) * radius;
+                                const z = markerPosition.z + Math.sin(angle) * radius;
+                                if (Math.hypot(x, z) > grassRadius - 2) continue;
+                                const pathGap = allPathPoints.reduce((nearest, point) => Math.min(nearest, Math.hypot(x - point.x, z - point.z)), Infinity);
+                                if (pathGap < 4) continue;
+                                const treeGap = pineTreePositions.reduce((nearest, other, index) => index === treeIndex ? nearest : Math.min(nearest, Math.hypot(x - other.x, z - other.z)), Infinity);
+                                if (treeGap < 4) continue;
+                                const gearGap = Math.hypot(x - markerPosition.x, z - markerPosition.z);
+                                const score = Math.min(pathGap, treeGap, gearGap);
+                                if (score > bestScore) { bestScore = score; relocation = { x, z }; }
+                            }
+                        }
+                        if (relocation) {
+                            tree.x = relocation.x; tree.z = relocation.z;
+                            tree.group.position.set(relocation.x, 0, relocation.z);
+                        }
+                    });
+                }
+                if (isDive) {
+                    const cakePoint = pathCurves[routeIndex].getPoint(routeTimes[0]);
+                    const cakeTangent = pathCurves[routeIndex].getTangent(routeTimes[0]);
+                    const cakeSide = new THREE.Vector3(-cakeTangent.z, 0, cakeTangent.x).normalize();
+                    const cakePosition = cakePoint.addScaledVector(cakeSide, -4.8);
+                    for (const t of [0.78, 0.84, 0.90]) {
+                        const point = pathCurves[routeIndex].getPoint(t);
+                        const tangent = pathCurves[routeIndex].getTangent(t);
+                        const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+                        const candidate = point.addScaledVector(side, 4.8);
+                        if (candidate.distanceTo(cakePosition) >= 17 && Math.hypot(candidate.x, candidate.z) < grassRadius - 6) {
+                            markerPosition = candidate;
+                            break;
+                        }
+                    }
+                }
+                if (isCosmic) {
+                    // Keep the enlarged ship beside the game path, opposite the first game piece.
+                    const firstPoint = pathCurves[routeIndex].getPoint(routeTimes[0]);
+                    const firstTangent = pathCurves[routeIndex].getTangent(routeTimes[0]);
+                    const firstNormal = new THREE.Vector3(-firstTangent.z, 0, firstTangent.x).normalize();
+                    const firstWorkPosition = firstPoint.addScaledVector(firstNormal, -4.8);
+                    let bestClearance = -Infinity;
+                    for (const candidateTime of [0.66, 0.70, 0.74, 0.78, 0.82]) {
+                        const center = pathCurves[routeIndex].getPoint(candidateTime);
+                        const tangent = pathCurves[routeIndex].getTangent(candidateTime);
+                        const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+                        for (const sideDistance of [5.6, 6.1, 6.6]) {
+                            for (const alongDistance of [-2, 0, 2]) {
+                                const candidate = center.clone()
+                                    .addScaledVector(normal, sideDistance)
+                                    .addScaledVector(tangent, alongDistance);
+                                if (candidate.distanceTo(firstWorkPosition) < 16) continue;
+                                if (Math.hypot(candidate.x, candidate.z) > grassRadius - 6) continue;
+                                const clearance = pineTreePositions.reduce((nearest, tree) => Math.min(nearest, Math.hypot(candidate.x - tree.x, candidate.z - tree.z)), Infinity);
+                                if (clearance > bestClearance) { bestClearance = clearance; markerPosition = candidate; }
+                            }
+                        }
+                    }
+                    // If the best roadside position still clips a pine canopy, relocate only that tree.
+                    pineTreePositions.forEach((tree, treeIndex) => {
+                        if (Math.hypot(markerPosition.x - tree.x, markerPosition.z - tree.z) >= 7) return;
+                        let relocation = null;
+                        let bestRelocationScore = -Infinity;
+                        for (const radius of [8, 9.5, 11, 12.5]) {
+                            for (let step = 0; step < 24; step++) {
+                                const angle = step * Math.PI / 12;
+                                const x = markerPosition.x + Math.cos(angle) * radius;
+                                const z = markerPosition.z + Math.sin(angle) * radius;
+                                if (Math.hypot(x, z) > grassRadius - 2) continue;
+                                const pathGap = allPathPoints.reduce((nearest, point) => Math.min(nearest, Math.hypot(x - point.x, z - point.z)), Infinity);
+                                if (pathGap < 3.5) continue;
+                                const treeGap = pineTreePositions.reduce((nearest, other, index) => index === treeIndex ? nearest : Math.min(nearest, Math.hypot(x - other.x, z - other.z)), Infinity);
+                                if (treeGap < 3.5) continue;
+                                const shipGap = Math.hypot(x - markerPosition.x, z - markerPosition.z);
+                                const score = Math.min(treeGap, pathGap, shipGap);
+                                if (score > bestRelocationScore) { bestRelocationScore = score; relocation = { x, z }; }
+                            }
+                        }
+                        if (relocation) {
+                            tree.x = relocation.x; tree.z = relocation.z;
+                            tree.group.position.set(relocation.x, 0, relocation.z);
+                        }
+                    });
+                }
+                if (isDive) {
+                    // Keep the diver's full silhouette clear; move only nearby pines into open ground.
+                    pineTreePositions.forEach((tree, treeIndex) => {
+                        if (Math.hypot(markerPosition.x - tree.x, markerPosition.z - tree.z) >= 9) return;
+                        let relocation = null;
+                        let bestScore = -Infinity;
+                        for (const radius of [9, 11, 13, 15]) {
+                            for (let step = 0; step < 32; step++) {
+                                const angle = step * Math.PI / 16;
+                                const x = markerPosition.x + Math.cos(angle) * radius;
+                                const z = markerPosition.z + Math.sin(angle) * radius;
+                                if (Math.hypot(x, z) > grassRadius - 2) continue;
+                                const pathGap = allPathPoints.reduce((nearest, point) => Math.min(nearest, Math.hypot(x - point.x, z - point.z)), Infinity);
+                                if (pathGap < 4) continue;
+                                const treeGap = pineTreePositions.reduce((nearest, other, index) => index === treeIndex ? nearest : Math.min(nearest, Math.hypot(x - other.x, z - other.z)), Infinity);
+                                if (treeGap < 4) continue;
+                                const score = Math.min(pathGap, treeGap);
+                                if (score > bestScore) { bestScore = score; relocation = { x, z }; }
+                            }
+                        }
+                        if (relocation) {
+                            tree.x = relocation.x; tree.z = relocation.z;
+                            tree.group.position.set(relocation.x, 0, relocation.z);
+                        }
+                    });
+                }
+
+                portfolioData.push({
+                    id: `${route.id}-${itemIndex + 1}`, routeIndex, order: itemIndex + 1, routeCount: route.id === 'pure' ? 1 : routeTimes.length,
+                    titleZh, titleEn, descZh, descEn,
+                    actionTextZh: route.actionTextZh, actionTextEn: route.actionTextEn,
+                    video: route.id === 'film' && first
+                        ? './影视配乐-关窗/关窗配乐版终稿.mov'
+                        : (isCosmic ? './游戏音乐-Costomic%20Signal/部分cg%2B飞船电台音乐.mp4' : (isOde ? './游戏音乐-Ode%20to%20Machinery/Ode%20to%20Machinery%20by%20Heyuxuan.mp4' : (isDive ? './影视配乐-Dive/diving%20v2.mov' : (isPaperCrane ? './纯音乐-勇气%20命运%20远方/勇气%20命运%20远方.mp4?v=20261022' : '')))),
+                    videos: isCosmic ? [
+                        { title: '剧情片段 · 飞船电台音乐 / Story & Ship Radio', src: './游戏音乐-Costomic%20Signal/部分cg%2B飞船电台音乐.mp4' },
+                        { title: '开屏 · Out of the Earth / Opening', src: './游戏音乐-Costomic%20Signal/开屏-Out%20of%20The%20Earth.mp4' },
+                        { title: '太空结局 · Be a Star / Space Ending', src: './游戏音乐-Costomic%20Signal/太空结局-Be%20a%20Star.mp4' },
+                        { title: '回家结局 · Back Home / Home Ending', src: './游戏音乐-Costomic%20Signal/回家结局-Back%20Home.mp4' }
+                    ] : null,
+                    link: isCosmic ? 'https://ldjam.com/events/ludum-dare/59/$427126' : (isOde ? 'https://www.ggac.com/work/detail/1897551' : (isPaperCrane ? 'https://www.ggac.com/work/detail/1897837' : '')),
+                    model: isCosmic ? 'spaceship' : (isOde ? 'gear' : (isDive ? 'diver' : (isPaperCrane ? 'paper-crane' : (route.id === 'film' && first ? 'cake' : route.shape)))),
+                    color: isCosmic ? 0x8bb9cf : (isOde ? 0xd7a747 : (isDive ? 0x42d9e8 : (isPaperCrane ? 0xf3a8ca : route.color))), hex: isCosmic ? '#8bb9cf' : (isOde ? '#d7a747' : (isDive ? '#42d9e8' : (isPaperCrane ? '#f3a8ca' : route.hex))), geo,
+                    pos: markerPosition
+                });
+            });
+        });
+        const markers = [];
+        const profileMarker = new THREE.Object3D();
+        profileMarker.position.copy(profilePosition);
+        profileMarker.userData = {
+            originalY: profilePosition.y,
+            phase: 0,
+            info: {
+                id: 'profile-intro', model: 'profile', titleZh: '个人信息', titleEn: 'About Me',
+                descZh: "何雨萱  /  Yuxuan HE\n出生年份 · 2004\n\n教育背景\n2026–2027  布里斯托大学｜影视配乐 硕士\n2022–2026  上海交通大学｜广播电视编导 学士｜GPA：3.8/4.3\n\n实习经历\n小红书｜音乐产品运营\n2024.6–2024.9\n· 音乐内容策划与创作：参与小红书音乐生产的选题策划，收集并分类适配不同风格与场景的音乐；根据流行趋势，每周与音乐人讨论专辑策划并跟进制作进度。参与音乐制作，共产出 6 张背景音乐专辑。\n· 音乐包装与分发：负责音乐专辑包装与上线分发，根据主题和风格制作封面、为音乐打标以促进精准推荐；分析上线数据并据此调整分发策略。\n· 音乐模板制作与宣传：制作并上传配套视频模板和剪辑宣传视频，通过契合当月热点的音乐模板提升音乐使用率与用户体验，模板总使用量达 10,000+。\n\n喜马拉雅｜音频生态治理\n2025.10–2026.3\n· 音频质量规则标定：参与建立平台音频分级体系，为有声书、播客、广播剧等品类制定参数和艺术审美标准；独立完成音乐品类质量规则标定。\n· 治理策略迭代：持续追踪用户对音频质感的反馈并分析流量分发，协助优化治理策略，减少劣质内容上传与曝光，促进优质内容有效曝光与转化。\n· 机审模型训练：拆解并标注声学缺陷，优化机审 prompt，为算法模型提供高质量训练数据，提升系统拦截低质音频的效率。\n\n实践经历\n游戏赛事：参与 Ludum Dare 29 Game Jam 赛事，在 72 小时高强度创作周期内，独立负责参赛游戏《Costomic Signal》的全流程音频策划与制作，涵盖音效设计、原创音乐创作及后期混音。配合团队需求调整音频风格，确保音效、音乐与游戏画面、玩法节奏高度契合。共产出 7 首游戏配乐，若干音效等，完成赛事交付。\n独立游戏：负责多部独立游戏音频核心工作，主导音乐设计与音效设计全流程，结合游戏不同地图的场景氛围、剧情调性，对主题音乐进行针对性配器调整与编曲优化，打造贴合场景的听觉体验，提升游戏整体沉浸感。注：由于部分独游仍在开发过程中，故未在此网页展示。\n乐团经历：作为艺术特长生，担任上海交通大学中国民族管弦乐团副团长、笙首席；排练 10 余首民族室内乐及大型民族管弦乐作品，参与 5 场以上大型音乐会演出与比赛。\n\n联系方式：hyuxuan0717@163.com",
+                descEn: "Yuxuan HE  /  何雨萱\nBorn · 2004\n\nEDUCATION\n2026–2027  University of Bristol | Master’s · Composition for Film&TV\n2022–2026  Shanghai Jiao Tong University | BA Radio and Television Directing | GPA: 3.8/4.3\n\nINTERNSHIP EXPERIENCE\nXiaohongshu (RED) | Music Product Operations\nJun 2024–Sep 2024\n· Music Content Planning and Production: Contributed to music topic planning; collected and categorized music for different styles and use cases. Planned albums weekly with musicians in response to trends and tracked production. Participated in music production, contributing to six background music albums.\n· Music Packaging and Distribution: Packaged and distributed music albums, designed covers for different themes and styles, and tagged music to support accurate recommendations. Analyzed release data and adjusted distribution strategies accordingly.\n· Music Template Production and Promotion: Created and uploaded music video templates and promotional edits. Trend-aligned templates improved music usage and user experience, reaching 10,000+ total uses.\n\nXimalaya | Audio Ecosystem Quality\nOct 2025–Mar 2026\n· Audio Quality Standards: Helped establish the platform’s audio grading system and define technical and artistic standards for audiobooks, podcasts, audio dramas, and other categories. Independently calibrated quality rules for music.\n· Governance Strategy Iteration: Tracked user feedback on audio quality and analyzed distribution performance to help refine governance, reduce low-quality uploads and exposure, and improve discovery and conversion for quality content.\n· Automated Review Model Training: Analyzed and labeled acoustic defects and refined moderation prompts, providing high-quality training data to improve the model’s detection of low-quality audio.\n\nPRACTICAL EXPERIENCE\nGame Jam: Participated in Ludum Dare 29 Game Jam. During the intensive 72-hour creation cycle, independently led end-to-end audio planning and production for the entry game “Costomic Signal,” including sound design, original music composition, and post-production mixing. Adapted the audio style to the team’s needs to align the sound and music with the visuals and gameplay rhythm. Delivered 7 game music tracks and several sound effects for the competition.\nIndependent Games: Led core audio work across multiple indie games, taking charge of the full music and sound design process. Tailored orchestration and arrangements to the atmosphere and narrative tone of different game maps, creating a fitting listening experience and strengthening immersion. Note: Some indie games are still in development and are not shown on this website.\nOrchestra Experience: As an arts-track student, served as Deputy Head and Sheng Principal of the Shanghai Jiao Tong University Chinese Orchestra. Rehearsed more than 10 works spanning Chinese chamber music and large-scale Chinese orchestral repertoire, and participated in over five major concerts and competitions.\n\nCONTACT: hyuxuan0717@163.com",
+                actionTextZh: '个人介绍', actionTextEn: 'PROFILE', video: '', hex: '#a98aff'
+            }
+        };
+        markers.push(profileMarker);
+        portfolioData.forEach(data => {
+            const mat = new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.2, metalness: 0.5, emissive: data.color, emissiveIntensity: 1.5 });
+            const mesh = new THREE.Group();
+            const paperWingPivots = [];
+            if (data.model === 'cake') {
+                const blackCake = new THREE.MeshStandardMaterial({ color: 0x24212a, roughness: 0.27, metalness: 0.12, emissive: 0x17111b, emissiveIntensity: 0.9 });
+                const glaze = new THREE.MeshStandardMaterial({ color: 0x35283a, roughness: 0.18, metalness: 0.08, emissive: 0x29132d, emissiveIntensity: 1.2 });
+                const trim = new THREE.MeshStandardMaterial({ color: 0x8b6c83, roughness: 0.3, metalness: 0.4, emissive: 0x492348, emissiveIntensity: 1.0 });
+                const plateMat = new THREE.MeshStandardMaterial({ color: 0x3b3741, roughness: 0.25, metalness: 0.55, emissive: 0x29202e, emissiveIntensity: 0.8 });
+                const plate = new THREE.Mesh(new THREE.CylinderGeometry(1.75, 1.82, 0.16, 40), plateMat);
+                plate.position.y = 0.08;
+                mesh.add(plate);
+                const lowerTier = new THREE.Mesh(new THREE.CylinderGeometry(1.48, 1.58, 0.7, 40), blackCake);
+                lowerTier.position.y = 0.48;
+                mesh.add(lowerTier);
+                const lowerIcing = new THREE.Mesh(new THREE.CylinderGeometry(1.57, 1.57, 0.1, 40), glaze);
+                lowerIcing.position.y = 0.86;
+                mesh.add(lowerIcing);
+                const lowerTrim = new THREE.Mesh(new THREE.TorusGeometry(1.53, 0.035, 8, 40), trim);
+                lowerTrim.rotation.x = Math.PI / 2;
+                lowerTrim.position.y = 0.82;
+                mesh.add(lowerTrim);
+                const upperTier = new THREE.Mesh(new THREE.CylinderGeometry(1.08, 1.2, 0.62, 36), blackCake);
+                upperTier.position.y = 1.18;
+                mesh.add(upperTier);
+                const topIcing = new THREE.Mesh(new THREE.CylinderGeometry(1.19, 1.19, 0.1, 36), glaze);
+                topIcing.position.y = 1.54;
+                mesh.add(topIcing);
+                const upperTrim = new THREE.Mesh(new THREE.TorusGeometry(1.16, 0.03, 8, 36), trim);
+                upperTrim.rotation.x = Math.PI / 2;
+                upperTrim.position.y = 1.5;
+                mesh.add(upperTrim);
+                for (let drip = 0; drip < 14; drip++) {
+                    const angle = (drip / 14) * Math.PI * 2;
+                    const drop = new THREE.Mesh(new THREE.SphereGeometry(0.11 + (drip % 3) * 0.025, 8, 7), glaze);
+                    drop.scale.set(0.72, 1.55, 0.72);
+                    drop.position.set(Math.cos(angle) * 1.53, 0.79 - (drip % 3) * 0.035, Math.sin(angle) * 1.53);
+                    mesh.add(drop);
+                }
+                const candleMat = new THREE.MeshStandardMaterial({ color: 0xded4c1, emissive: 0x534230, emissiveIntensity: 0.6, roughness: 0.45 });
+                const flameMat = new THREE.MeshBasicMaterial({ color: 0xffb15c });
+                for (let candle = 0; candle < 5; candle++) {
+                    const angle = (candle / 5) * Math.PI * 2;
+                    const cx = Math.cos(angle) * 0.63;
+                    const cz = Math.sin(angle) * 0.63;
+                    const wick = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.46, 8), candleMat);
+                    wick.position.set(cx, 1.82, cz);
+                    mesh.add(wick);
+                    const flame = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 7), flameMat);
+                    flame.scale.set(0.72, 1.5, 0.72);
+                    flame.position.set(cx, 2.12, cz);
+                    mesh.add(flame);
+                }
+                const candleGlow = new THREE.PointLight(0xffb56b, 2.1, 9);
+                candleGlow.position.y = 2.15;
+                mesh.add(candleGlow);
+                // Lift the tilted cake above its pedestal so the lower plate clears the base.
+                mesh.position.set(data.pos.x, 3.8, data.pos.z);
+            } else if (data.model === 'diver') {
+                const diver = new THREE.Group();
+                const suitMat = new THREE.MeshStandardMaterial({ color: 0x124b68, roughness: 0.42, metalness: 0.12, emissive: 0x062331, emissiveIntensity: 0.65 });
+                const suitTrimMat = new THREE.MeshStandardMaterial({ color: 0x51dce7, emissive: 0x168a9b, emissiveIntensity: 1.0, roughness: 0.3 });
+                const tankMat = new THREE.MeshStandardMaterial({ color: 0xd59a56, metalness: 0.5, roughness: 0.35, emissive: 0x44260d, emissiveIntensity: 0.28 });
+                const skinMat = new THREE.MeshStandardMaterial({ color: 0xdba982, roughness: 0.72 });
+                const maskGlassMat = new THREE.MeshStandardMaterial({ color: 0x69e4f4, metalness: 0.35, roughness: 0.18, emissive: 0x16899a, emissiveIntensity: 0.85 });
+                const torso = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 10), suitMat);
+                torso.scale.set(0.9, 1.16, 1.62); diver.add(torso);
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.27, 12, 10), skinMat);
+                head.position.set(0, 0.08, 0.78); diver.add(head);
+                const hood = new THREE.Mesh(new THREE.SphereGeometry(0.29, 12, 10), suitMat);
+                hood.scale.set(1, 1.02, 0.72); hood.position.set(0, 0.12, 0.75); diver.add(hood);
+                const mask = new THREE.Mesh(new THREE.BoxGeometry(0.47, 0.22, 0.11), maskGlassMat);
+                mask.position.set(0, 0.12, 1.015); diver.add(mask);
+                const maskRim = new THREE.Mesh(new THREE.BoxGeometry(0.53, 0.28, 0.07), suitTrimMat);
+                maskRim.position.set(0, 0.12, 0.99); diver.add(maskRim);
+                const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.22, 0.92, 12), tankMat);
+                tank.rotation.x = Math.PI / 2; tank.position.set(0, 0.39, -0.42); diver.add(tank);
+                const tankBand = new THREE.Mesh(new THREE.TorusGeometry(0.205, 0.035, 6, 12), suitTrimMat);
+                tankBand.rotation.x = Math.PI / 2; tankBand.position.set(0, 0.39, -0.2); diver.add(tankBand);
+                const addLimb = (start, end, radius, material) => {
+                    const a = new THREE.Vector3(...start), b = new THREE.Vector3(...end);
+                    const delta = new THREE.Vector3().subVectors(b, a);
+                    const limb = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.82, radius, delta.length(), 8), material);
+                    limb.position.copy(a).add(b).multiplyScalar(0.5);
+                    limb.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.normalize()); diver.add(limb);
+                    return limb;
+                };
+                for (let side = -1; side <= 1; side += 2) {
+                    addLimb([side * 0.26,0.24,0.36],[side * 0.72,0.38,0.48],0.13,suitMat);
+                    addLimb([side * 0.72,0.38,0.48],[side * 1.0,0.53,0.82],0.105,suitMat);
+                    const glove = new THREE.Mesh(new THREE.SphereGeometry(0.13, 9, 7), skinMat);
+                    glove.position.set(side * 1.04, 0.55, 0.88); diver.add(glove);
+                    addLimb([side * 0.14,-0.2,-0.37],[side * 0.2,-0.32,-0.8],0.145,suitMat);
+                    addLimb([side * 0.2,-0.32,-0.8],[side * 0.24,-0.18,-1.16],0.115,suitMat);
+                    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.1, 0.5), suitTrimMat);
+                    fin.position.set(side * 0.24,-0.16,-1.38); fin.rotation.x = -0.12; diver.add(fin);
+                }
+                const hoseCurve = new THREE.CatmullRomCurve3([
+                    new THREE.Vector3(0.2,0.42,-0.72), new THREE.Vector3(0.42,0.6,-0.35),
+                    new THREE.Vector3(0.35,0.52,0.12), new THREE.Vector3(0.18,0.25,0.78)
+                ]);
+                diver.add(new THREE.Mesh(new THREE.TubeGeometry(hoseCurve, 24, 0.035, 7, false), tankMat));
+                for (let bubble = 0; bubble < 5; bubble++) {
+                    const bubbleMat = new THREE.MeshBasicMaterial({ color: 0x9bf3ff, transparent: true, opacity: 0.62, depthWrite: false });
+                    const bead = new THREE.Mesh(new THREE.SphereGeometry(0.075 + (bubble % 2) * 0.025, 8, 7), bubbleMat);
+                    bead.position.set(0.35 + Math.sin(bubble) * 0.16, 0.68 + bubble * 0.22, 0.82 - bubble * 0.06); diver.add(bead);
+                }
+                mesh.add(diver);
+                mesh.position.set(data.pos.x, 4, data.pos.z);
+            } else if (data.model === 'paper-crane') {
+                const pinkPaper = new THREE.MeshStandardMaterial({ color: 0xffb5d6, emissive: 0x7d294f, emissiveIntensity: 0.55, roughness: 0.44, side: THREE.DoubleSide, flatShading: true });
+                const whitePaper = new THREE.MeshStandardMaterial({ color: 0xfffbff, emissive: 0x775568, emissiveIntensity: 0.32, roughness: 0.48, side: THREE.DoubleSide, flatShading: true });
+                const foldLine = new THREE.LineBasicMaterial({ color: 0xffeaf4, transparent: true, opacity: 0.95 });
+                const addFold = (parent, points, material) => {
+                    const geometry = new THREE.BufferGeometry();
+                    const [a, b, c] = points.map(point => new THREE.Vector3(...point));
+                    const normal = new THREE.Vector3().crossVectors(new THREE.Vector3().subVectors(b, a), new THREE.Vector3().subVectors(c, a)).normalize();
+                    const back = [a, b, c].map(point => point.clone().addScaledVector(normal, -0.075));
+                    const vertices = [];
+                    const triangle = (p1, p2, p3) => vertices.push(...p1.toArray(), ...p2.toArray(), ...p3.toArray());
+                    triangle(a, b, c); triangle(back[2], back[1], back[0]);
+                    triangle(a, back[0], back[1]); triangle(a, back[1], b);
+                    triangle(b, back[1], back[2]); triangle(b, back[2], c);
+                    triangle(c, back[2], back[0]); triangle(c, back[0], a);
+                    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                    geometry.computeVertexNormals();
+                    const facet = new THREE.Mesh(geometry, material); facet.castShadow = true; facet.receiveShadow = true; parent.add(facet);
+                };
+                const makeCrane = (scale, tint = 0) => {
+                    const crane = new THREE.Group(); crane.scale.setScalar(scale);
+                    const pink = tint ? whitePaper : pinkPaper;
+                    const pale = tint ? pinkPaper : whitePaper;
+                    for (let side = -1; side <= 1; side += 2) {
+                        const wing = new THREE.Group(); crane.add(wing); paperWingPivots.push({ wing, side, phase: Math.random() * 2 });
+                        addFold(wing, [[0,0.08,0],[side*1.42,0.92,-0.08],[side*0.28,0.18,-0.62]], pink);
+                        addFold(wing, [[0,0.08,0],[side*0.28,0.18,-0.62],[0,-0.18,-0.28]], pale);
+                        addFold(wing, [[0,0.08,0],[0,-0.18,-0.28],[side*0.72,-0.04,0.24]], pink);
+                        const crease = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0.08,0.01),new THREE.Vector3(side*1.42,0.92,-0.07)]);
+                        wing.add(new THREE.Line(crease, foldLine));
+                    }
+                    addFold(crane, [[0,0.08,0],[-0.72,-0.04,0.24],[0,-0.2,0.48]], pale);
+                    addFold(crane, [[0,0.08,0],[0,-0.2,0.48],[0.72,-0.04,0.24]], pink);
+                    addFold(crane, [[0,-0.05,-0.28],[-0.2,0.02,-1.12],[0,-0.16,-0.58]], pale);
+                    addFold(crane, [[0,-0.05,-0.28],[0,-0.16,-0.58],[0.2,0.02,-1.12]], pink);
+                    addFold(crane, [[0,0.05,0.38],[0,0.54,1.08],[0,-0.1,0.55]], pink);
+                    addFold(crane, [[0,0.54,1.08],[0.22,0.5,1.27],[0,0.43,1.06]], pale);
+                    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x73465a });
+                    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 5), eyeMat); eye.position.set(0.07,0.48,1.13); crane.add(eye);
+                    return crane;
+                };
+                const mainCrane = makeCrane(1.55, 0); mainCrane.position.set(0,0.08,0.05); mesh.add(mainCrane);
+                const companionA = makeCrane(0.74, 1); companionA.position.set(-1.72,-0.5,-0.38); companionA.rotation.y = -0.72; mesh.add(companionA);
+                const companionB = makeCrane(0.82, 0); companionB.position.set(1.68,-0.4,-0.3); companionB.rotation.y = 0.78; mesh.add(companionB);
+                const glow = new THREE.PointLight(0xffb5d3, 1.9, 13); glow.position.set(0,0.45,0.3); mesh.add(glow);
+                mesh.position.set(data.pos.x, 3.65, data.pos.z);
+            } else if (data.model === 'spaceship') {
+                const ship = new THREE.Group();
+                const hullMat = new THREE.MeshStandardMaterial({ color: 0x58616a, metalness: 0.72, roughness: 0.58, emissive: 0x111c24, emissiveIntensity: 0.35, flatShading: true });
+                const patchMat = new THREE.MeshStandardMaterial({ color: 0x8c6241, metalness: 0.66, roughness: 0.7, flatShading: true });
+                const darkMat = new THREE.MeshStandardMaterial({ color: 0x202a32, metalness: 0.62, roughness: 0.52 });
+                const glowMat = new THREE.MeshStandardMaterial({ color: 0x8ce8ff, emissive: 0x39bce8, emissiveIntensity: 2.2, metalness: 0.28, roughness: 0.2 });
+                const amberMat = new THREE.MeshStandardMaterial({ color: 0xffb66a, emissive: 0xe75c22, emissiveIntensity: 1.8, metalness: 0.25, roughness: 0.3 });
+                // Long, battered hull with a blunt salvage nose and exposed rear engine.
+                const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.72, 2.15, 8, 1), hullMat);
+                hull.rotation.x = Math.PI / 2; hull.position.z = -0.03; ship.add(hull);
+                const nose = new THREE.Mesh(new THREE.ConeGeometry(0.48, 0.82, 8), patchMat);
+                nose.rotation.x = Math.PI / 2; nose.position.z = 1.38; ship.add(nose);
+                const cockpit = new THREE.Mesh(new THREE.SphereGeometry(0.39, 10, 7), glowMat);
+                cockpit.scale.set(0.9, 0.67, 0.34); cockpit.position.set(0,0.16,0.78); ship.add(cockpit);
+                const cockpitFrame = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.065, 7, 12), darkMat);
+                cockpitFrame.position.set(0,0.16,0.89); ship.add(cockpitFrame);
+                // Asymmetric, patched salvage wings give the ship a visibly damaged silhouette.
+                for (const side of [-1, 1]) {
+                    const wing = new THREE.Mesh(new THREE.BoxGeometry(side < 0 ? 1.28 : 0.82, 0.13, side < 0 ? 0.62 : 0.48), side < 0 ? patchMat : hullMat);
+                    wing.position.set(side * 0.92, -0.04, -0.35); wing.rotation.y = side * -0.12; ship.add(wing);
+                    const wingTip = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.1,0.32), darkMat);
+                    wingTip.position.set(side * (side < 0 ? 1.55 : 1.26),0,-0.45); wingTip.rotation.y = side * 0.2; ship.add(wingTip);
+                    const nav = new THREE.Mesh(new THREE.SphereGeometry(0.1,8,6), side < 0 ? amberMat : glowMat);
+                    nav.position.set(side * 1.5,0.13,-0.22); ship.add(nav);
+                }
+                const engineRing = new THREE.Mesh(new THREE.TorusGeometry(0.45,0.11,8,12), darkMat);
+                engineRing.position.z = -1.12; ship.add(engineRing);
+                const engine = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.36,0.18,8), amberMat);
+                engine.rotation.x = Math.PI / 2; engine.position.z = -1.2; ship.add(engine);
+                const engineGlow = new THREE.PointLight(0xff9a50,1.2,5); engineGlow.position.set(0,0,-1.5); ship.add(engineGlow);
+                // Rivets, dent plates, and a bent antenna add close-up salvage detail.
+                for (let rivet = 0; rivet < 8; rivet++) {
+                    const angle = rivet * Math.PI / 4;
+                    const bolt = new THREE.Mesh(new THREE.SphereGeometry(0.055,6,5), patchMat);
+                    bolt.position.set(Math.cos(angle)*0.48,Math.sin(angle)*0.48,0.15); ship.add(bolt);
+                }
+                const plate = new THREE.Mesh(new THREE.BoxGeometry(0.28,0.16,0.08), patchMat); plate.position.set(-0.31,0.38,-0.25); plate.rotation.z = -0.2; ship.add(plate);
+                const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.035,0.62,6), darkMat); antenna.position.set(0.32,0.58,-0.42); antenna.rotation.z = -0.28; ship.add(antenna);
+                const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.085,7,5), amberMat); beacon.position.set(0.41,0.87,-0.5); ship.add(beacon);
+                const shipGlow = new THREE.PointLight(0x76c9ed,1.0,7); shipGlow.position.set(0,0.15,0.6); ship.add(shipGlow);
+                ship.scale.setScalar(2);
+                mesh.add(ship);
+                mesh.position.set(data.pos.x, 5.2, data.pos.z);
+            } else if (data.model === 'gear') {
+                const gear = new THREE.Group();
+                const brass = new THREE.MeshStandardMaterial({ color: 0xc58b32, metalness: 0.82, roughness: 0.24, emissive: 0x63360a, emissiveIntensity: 0.48 });
+                const brightBrass = new THREE.MeshStandardMaterial({ color: 0xf0c66a, metalness: 0.78, roughness: 0.2, emissive: 0x8a5613, emissiveIntensity: 0.38 });
+                const darkBrass = new THREE.MeshStandardMaterial({ color: 0x69451d, metalness: 0.72, roughness: 0.34 });
+                const toothCount = 14;
+                const outer = new THREE.Shape();
+                const points = [];
+                for (let tooth = 0; tooth < toothCount; tooth++) {
+                    const center = tooth * Math.PI * 2 / toothCount;
+                    const step = Math.PI * 2 / toothCount;
+                    [[-0.49,1.28],[-0.28,1.62],[0.28,1.62],[0.49,1.28]].forEach(([offset,radius]) => points.push([Math.cos(center + offset * step) * radius, Math.sin(center + offset * step) * radius]));
+                }
+                outer.moveTo(points[0][0], points[0][1]);
+                points.slice(1).forEach(([x,y]) => outer.lineTo(x,y)); outer.closePath();
+                const bore = new THREE.Path(); bore.absarc(0, 0, 0.45, 0, Math.PI * 2, true); outer.holes.push(bore);
+                // Six tapered through-cut windows expose the scenery behind the gear while leaving sturdy spokes.
+                const polar = (radius, angle) => [Math.cos(angle) * radius, Math.sin(angle) * radius];
+                for (let windowIndex = 0; windowIndex < 6; windowIndex++) {
+                    const angle = (windowIndex + 0.5) * Math.PI / 3;
+                    const aperture = new THREE.Path();
+                    const corners = [polar(0.64, angle - 0.17), polar(1.17, angle - 0.23), polar(1.17, angle + 0.23), polar(0.64, angle + 0.17)];
+                    aperture.moveTo(corners[0][0], corners[0][1]);
+                    corners.slice(1).forEach(([x,y]) => aperture.lineTo(x,y)); aperture.closePath();
+                    outer.holes.push(aperture);
+                }
+                const body = new THREE.Mesh(new THREE.ExtrudeGeometry(outer, { depth: 0.34, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.055, bevelThickness: 0.055 }), brass);
+                body.position.z = -0.17; gear.add(body);
+                const outerRim = new THREE.Mesh(new THREE.TorusGeometry(1.23, 0.055, 10, 48), brightBrass); outerRim.position.z = 0.235; gear.add(outerRim);
+                const innerRing = new THREE.Mesh(new THREE.TorusGeometry(0.49, 0.075, 10, 32), brightBrass); innerRing.position.z = 0.23; gear.add(innerRing);
+                const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.22, 16), brightBrass); hub.rotation.x = Math.PI / 2; hub.position.z = 0.18; gear.add(hub);
+                const hubInset = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.24, 12), darkBrass); hubInset.rotation.x = Math.PI / 2; hubInset.position.z = 0.22; gear.add(hubInset);
+                for (let bolt = 0; bolt < 6; bolt++) {
+                    const angle = bolt * Math.PI / 3;
+                    const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.07, 8), darkBrass);
+                    screw.rotation.x = Math.PI / 2; screw.position.set(Math.cos(angle) * 0.69, Math.sin(angle) * 0.69, 0.25); gear.add(screw);
+                    const slot = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.014, 0.012), brightBrass);
+                    slot.position.set(Math.cos(angle) * 0.69, Math.sin(angle) * 0.69, 0.292); slot.rotation.z = angle; gear.add(slot);
+                }
+                const centerGlow = new THREE.PointLight(0xffc45a, 1.8, 8); centerGlow.position.set(0,0,1.05); gear.add(centerGlow);
+                mesh.add(gear);
+                mesh.position.set(data.pos.x, 4, data.pos.z);
+            } else {
+                const model = new THREE.Mesh(data.geo, mat);
+                model.castShadow = true;
+                mesh.add(model);
+                mesh.position.set(data.pos.x, 4, data.pos.z);
+            }
+            mesh.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+            const stageRadius = data.model === 'spaceship' ? 3.65 : (data.model === 'gear' ? 2.85 : 2.7);
+            const showcase = new THREE.Group();
+            // Grass top is at y=1.25; keep the full podium and halo above the island surface.
+            showcase.position.set(data.pos.x, 1.27, data.pos.z);
+            const stageBaseMat = new THREE.MeshStandardMaterial({ color: 0x111923, metalness: 0.58, roughness: 0.42, emissive: data.color, emissiveIntensity: 0.18 });
+            const stageTrimMat = new THREE.MeshStandardMaterial({ color: data.color, metalness: 0.35, roughness: 0.3, emissive: data.color, emissiveIntensity: 0.42 });
+            const stageBase = new THREE.Mesh(new THREE.CylinderGeometry(stageRadius * 0.93, stageRadius, 0.38, 40), stageBaseMat);
+            stageBase.position.y = 0.21; showcase.add(stageBase);
+            const stageTop = new THREE.Mesh(new THREE.CylinderGeometry(stageRadius * 0.91, stageRadius * 0.93, 0.1, 40), new THREE.MeshStandardMaterial({ color: 0x26323c, metalness: 0.42, roughness: 0.5, emissive: data.color, emissiveIntensity: 0.08 }));
+            stageTop.position.y = 0.45; showcase.add(stageTop);
+            const stageRing = new THREE.Mesh(new THREE.TorusGeometry(stageRadius * 0.9, 0.055, 8, 48), stageTrimMat);
+            stageRing.rotation.x = Math.PI / 2; stageRing.position.y = 0.52; showcase.add(stageRing);
+            const groundHalo = new THREE.Mesh(new THREE.CircleGeometry(stageRadius * 1.34, 48), new THREE.MeshBasicMaterial({ color: data.color, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+            groundHalo.rotation.x = -Math.PI / 2; groundHalo.position.y = 0.035; showcase.add(groundHalo);
+            const displaySpot = new THREE.SpotLight(data.color, 1.65, 22, Math.PI / 5, 0.82, 1.25);
+            displaySpot.position.set(data.pos.x, 10, data.pos.z);
+            const displayTarget = new THREE.Object3D(); displayTarget.position.set(data.pos.x, data.model === 'spaceship' ? 3.6 : 2.65, data.pos.z);
+            displaySpot.target = displayTarget;
+            scene.add(displaySpot, displayTarget);
+            scene.add(showcase);
+            mesh.userData = { originalY: mesh.position.y, phase: Math.random() * 10, info: data, paperWingPivots, showcase: { group: showcase, baseMat: stageBaseMat, trimMat: stageTrimMat, groundHalo, spot: displaySpot, fill: null, level: 0 } };
+            scene.add(mesh);
+            markers.push(mesh);
+            
+            // Gentle fill separates each artwork from the dark island even before interaction.
+            const pLight = new THREE.PointLight(data.color, 2.45, 20);
+            pLight.position.copy(mesh.position);
+            scene.add(pLight);
+            mesh.userData.showcase.fill = pLight;
+        });
+
+        // A trail of small luminous 3D stars leads from the island entrance toward the second work.
+        const orchestraStarInfos = [
+            { id: 'orchestra-video-1', model: 'orchestra-star', starT: 0.34, starPathIndex: 0, videoId: 'BV1SkrAYKEWp', titleZh: '我在民乐团吹笙', titleEn: 'Playing Sheng in the Chinese Orchestra', descZh: '《茶马》\n作曲：李博禅\n演奏：上海交通大学学生民乐团·交韵室内乐团\n中胡：潘瑜清   二胡：周天翊\n笛/箫：吴 迪   笙：何雨萱\n扬琴：李金昕 大阮：姜羽泽\n古筝：陈煜萱   琵琶：金静尧\n打击乐：代仕轩', descEn: '“Tea Horse Road”\nComposer: Li Bochan\nPerformed by: Jiaoyun Chamber Ensemble, Shanghai Jiao Tong University Student Chinese Orchestra\nZhonghu: Pan Yuqing   Erhu: Zhou Tianyi\nDizi/Xiao: Wu Di   Sheng: He Yuxuan\nYangqin: Li Jinxin   Daruan: Jiang Yuze\nGuzheng: Chen Yuxuan   Pipa: Jin Jingyao\nPercussion: Dai Shixuan', actionTextZh: '站内播放', actionTextEn: 'PLAY HERE' },
+            { id: 'orchestra-video-2', model: 'orchestra-star', starT: 0.36, starPathIndex: 1, videoId: 'BV1psg1eSEM3', titleZh: '我在民乐团吹笙', titleEn: 'Playing Sheng in the Chinese Orchestra', descZh: '《Can\'t Take My Eyes of You》\n改编：钟之岳\n演奏：上海交通大学学生民乐团\n双笙与民族管弦乐团', descEn: '“Can’t Take My Eyes of You”\nArrangement: Zhong Zhiyue\nPerformed by: Shanghai Jiao Tong University Student Chinese Orchestra\nTwo sheng players with Chinese orchestra', actionTextZh: '站内播放', actionTextEn: 'PLAY HERE' },
+            { id: 'orchestra-channel', model: 'orchestra-star', starT: 0.38, starPathIndex: 2, channel: true, titleZh: '请关注上海交大民乐团～', titleEn: 'Follow the SJTU Chinese Orchestra~', descZh: '', descEn: '', actionTextZh: '打开乐团主页', actionTextEn: 'OPEN CHANNEL' }
+        ].map(info => ({
+            ...info, video: '', link: '', hex: '#ffd98a', color: 0xffd98a,
+            descZh: info.descZh || (info.channel ? '' : '上海交通大学中国民族管弦乐团演出视频。点击播放器即可在网站内观看。'),
+            descEn: info.descEn || (info.channel ? '' : 'Shanghai Jiao Tong University Chinese Orchestra. Play the embedded video here.')
+        }));
+        const starShape = new THREE.Shape();
+        for (let point = 0; point < 10; point++) {
+            const angle = -Math.PI / 2 + point * Math.PI / 5;
+            const radius = point % 2 === 0 ? 1.34 : 0.68;
+            const x = Math.cos(angle) * radius, y = Math.sin(angle) * radius;
+            if (point === 0) starShape.moveTo(x, y); else starShape.lineTo(x, y);
+        }
+        starShape.closePath();
+        const starGeometry = new THREE.ExtrudeGeometry(starShape, { depth: 1.08, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.16, bevelThickness: 0.16 });
+        starGeometry.translate(0, 0, -0.54);
+        const starShardGeometry = new THREE.OctahedronGeometry(0.48, 0);
+        const starDebrisGeometry = new THREE.DodecahedronGeometry(0.48, 0);
+        const starMaterials = [
+            new THREE.MeshStandardMaterial({ color: 0xffc86d, metalness: 0.48, roughness: 0.22, emissive: 0xff8f24, emissiveIntensity: 1.45, flatShading: true }),
+            new THREE.MeshStandardMaterial({ color: 0xffe5a1, metalness: 0.44, roughness: 0.2, emissive: 0xffc44d, emissiveIntensity: 1.3, flatShading: true }),
+            new THREE.MeshStandardMaterial({ color: 0xf4bcdf, metalness: 0.42, roughness: 0.23, emissive: 0xe975bb, emissiveIntensity: 1.1, flatShading: true })
+        ];
+        const starCrackMat = new THREE.MeshBasicMaterial({ color: 0xfff2c6, transparent: true, opacity: 0.95 });
+        const starCraterMat = new THREE.MeshStandardMaterial({ color: 0x332a35, metalness: 0.18, roughness: 0.92, emissive: 0x39202a, emissiveIntensity: 0.22 });
+        const starGlowMat = new THREE.MeshBasicMaterial({ color: 0xffb73f, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+        const orchestraStarMarkers = [];
+        const starCount = orchestraStarInfos.length;
+        for (let index = 0; index < starCount; index++) {
+            const starInfo = orchestraStarInfos[index];
+            const starPath = pathCurves[starInfo.starPathIndex];
+            const travelT = starInfo.starT + (Math.random() - 0.5) * 0.035;
+            const center = starPath.getPoint(travelT);
+            const tangent = starPath.getTangent(travelT);
+            const roadside = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
+            let position = null;
+            for (let attempt = 0; attempt < 240 && !position; attempt++) {
+                const side = Math.random() < 0.5 ? -1 : 1;
+                const offset = side * (3.0 + Math.random() * 0.65);
+                const candidate = center.clone().addScaledVector(roadside, offset);
+                if (Math.hypot(candidate.x, candidate.z) > grassRadius - 3) continue;
+                if (allPathPoints.some(point => Math.hypot(candidate.x - point.x, candidate.z - point.z) < 2.3)) continue;
+                if (pineTreePositions.some(tree => Math.hypot(candidate.x - tree.x, candidate.z - tree.z) < 1.45 * tree.group.scale.x + 1.05)) continue;
+                if (lamps.some(lamp => Math.hypot(candidate.x - lamp.position.x, candidate.z - lamp.position.z) < 1.9)) continue;
+                if (pathAnimalStaticObstacles.some(obstacle => Math.hypot(candidate.x - obstacle.x, candidate.z - obstacle.z) < obstacle.radius + 0.8)) continue;
+                if (markers.some(marker => {
+                    const model = marker.userData.info && marker.userData.info.model;
+                    const minGap = model === 'spaceship' ? 7.2 : (model === 'cake' ? 6.6 : (model === 'gear' ? 6.4 : (model === 'profile' ? 6.4 : (model === 'orchestra-star' ? 3.8 : 5.8))));
+                    return Math.hypot(candidate.x - marker.position.x, candidate.z - marker.position.z) < minGap;
+                })) continue;
+                if (pathAnimals.some(animal => Math.hypot(candidate.x - animal.homeX, candidate.z - animal.homeZ) < 2.5)) continue;
+                if (orchestraStarMarkers.some(star => Math.hypot(candidate.x - star.position.x, candidate.z - star.position.z) < 4.2)) continue;
+                position = candidate;
+            }
+            if (!position) {
+                const fallbackTimes = [starInfo.starT, starInfo.starT - 0.08, starInfo.starT + 0.08, starInfo.starT - 0.16, starInfo.starT + 0.16];
+                const fallbackOffsets = [3.2, 4.0, 4.8, 5.6, 6.4];
+                for (const fallbackT of fallbackTimes) {
+                    const safeT = THREE.MathUtils.clamp(fallbackT, 0.06, 0.76);
+                    const fallbackCenter = starPath.getPoint(safeT);
+                    const fallbackTangent = starPath.getTangent(safeT);
+                    const fallbackSideVector = new THREE.Vector3(-fallbackTangent.z, 0, fallbackTangent.x).normalize();
+                    for (const offset of fallbackOffsets) {
+                        for (const side of [1, -1]) {
+                            const candidate = fallbackCenter.clone().addScaledVector(fallbackSideVector, side * offset);
+                            if (Math.hypot(candidate.x, candidate.z) > grassRadius - 3) continue;
+                            const tooCloseToWork = markers.some(marker => {
+                                const model = marker.userData.info && marker.userData.info.model;
+                                const minGap = model === 'spaceship' ? 7.2 : (model === 'cake' ? 6.6 : (model === 'gear' ? 6.4 : (model === 'profile' ? 6.4 : (model === 'orchestra-star' ? 3.8 : 5.8))));
+                                return Math.hypot(candidate.x - marker.position.x, candidate.z - marker.position.z) < minGap;
+                            });
+                            const tooCloseToStar = orchestraStarMarkers.some(star => Math.hypot(candidate.x - star.position.x, candidate.z - star.position.z) < 4.2);
+                            if (!tooCloseToWork && !tooCloseToStar) {
+                                position = candidate;
+                                break;
+                            }
+                        }
+                        if (position) break;
+                    }
+                    if (position) break;
+                }
+                if (!position) position = center.clone().addScaledVector(roadside, (index % 2 === 0 ? 1 : -1) * 6.4);
+            }
+            const star = new THREE.Group();
+            const starMesh = new THREE.Mesh(starGeometry, starMaterials[index % starMaterials.length]);
+            starMesh.position.y = 1.3;
+            starMesh.scale.setScalar(1.12 + Math.random() * 0.12);
+            star.add(starMesh);
+            const shardCount = 5;
+            for (let shardIndex = 0; shardIndex < shardCount; shardIndex++) {
+                const angle = -Math.PI / 2 + shardIndex * Math.PI * 2 / shardCount + (Math.random() - 0.5) * 0.18;
+                const shard = new THREE.Mesh(starShardGeometry, starMaterials[(index + shardIndex + 1) % starMaterials.length]);
+                const radius = 0.82 + Math.random() * 0.25;
+                shard.position.set(Math.cos(angle) * radius, 1.3 + Math.sin(angle) * radius, (Math.random() - 0.5) * 0.55);
+                shard.scale.set(0.62 + Math.random() * 0.18, 0.9 + Math.random() * 0.55, 0.72 + Math.random() * 0.24);
+                shard.rotation.set(Math.random() * 0.6, Math.random() * Math.PI, Math.random() * 0.7);
+                star.add(shard);
+            }
+            const crackPaths = [
+                [[-0.08, 2.28, 0.87], [0.04, 1.9, 0.87], [-0.22, 1.62, 0.87], [-0.1, 1.34, 0.87]],
+                [[0.05, 1.92, 0.87], [0.42, 1.73, 0.87], [0.57, 1.48, 0.87]],
+                [[-0.2, 1.63, 0.87], [-0.54, 1.44, 0.87], [-0.62, 1.18, 0.87]]
+            ];
+            crackPaths.forEach(points => {
+                const curve = new THREE.CatmullRomCurve3(points.map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+                star.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 14, 0.027, 5, false), starCrackMat));
+            });
+            const debrisLayout = [
+                [-1.65, 0.02, -0.45, 0.54], [-0.95, -0.04, 1.32, 0.42], [0.05, -0.02, 1.84, 0.48],
+                [1.48, 0.03, 0.86, 0.6], [1.92, -0.02, -0.52, 0.44], [0.72, 0.02, -1.65, 0.5], [-0.78, 0.03, -1.67, 0.39]
+            ];
+            debrisLayout.forEach(([x, y, z, size], debrisIndex) => {
+                const debris = new THREE.Mesh(starDebrisGeometry, debrisIndex % 2 ? starCraterMat : starMaterials[(index + debrisIndex) % starMaterials.length]);
+                debris.position.set(x + (Math.random() - 0.5) * 0.18, y, z + (Math.random() - 0.5) * 0.18);
+                debris.scale.set(size * 1.25, size * 0.68, size * 0.92);
+                debris.rotation.set(Math.random() * 0.5, Math.random() * Math.PI, Math.random() * 0.6);
+                star.add(debris);
+            });
+            const crater = new THREE.Mesh(new THREE.CircleGeometry(2.45, 40), starCraterMat);
+            crater.rotation.x = -Math.PI / 2; crater.position.y = -0.12; star.add(crater);
+            const craterGlow = new THREE.Mesh(new THREE.CircleGeometry(2.9, 40), starGlowMat);
+            craterGlow.rotation.x = -Math.PI / 2; craterGlow.position.y = -0.1; star.add(craterGlow);
+            const impactRim = new THREE.Mesh(new THREE.TorusGeometry(2.25, 0.09, 9, 48), starMaterials[index % starMaterials.length]);
+            impactRim.rotation.x = Math.PI / 2; impactRim.position.y = -0.045; star.add(impactRim);
+            const starLight = new THREE.PointLight(0xffb846, 2.2, 9);
+            starLight.position.set(0, 1.45, 0.3); star.add(starLight);
+            star.scale.setScalar(0.25);
+            star.position.set(position.x, 1.27, position.z);
+            star.rotation.y = Math.atan2(-tangent.x, -tangent.z) + (Math.random() - 0.5) * 0.16;
+            star.userData = { originalY: star.position.y, phase: Math.random() * 8, info: starInfo, paperWingPivots: [] };
+            scene.add(star);
+            markers.push(star);
+            orchestraStarMarkers.push(star);
+            pathAnimalStaticObstacles.push({ x: position.x, z: position.z, radius: 1.35 });
+        }
+
+        // Keep wildlife wandering clear of the road stones, trees, route labels, displays, stars and each other.
+        function isPathAnimalSpotClear(x, z, currentAnimal, padding = 0.82) {
+            if (Math.hypot(x, z) > grassRadius - 3) return false;
+            if (allPathPoints.some(point => Math.hypot(x - point.x, z - point.z) < 1.85 + padding * 0.35)) return false;
+            if (pineTreePositions.some(tree => Math.hypot(x - tree.x, z - tree.z) < 2.15 * tree.group.scale.x + padding)) return false;
+            if (lamps.some(lamp => Math.hypot(x - lamp.position.x, z - lamp.position.z) < 1.65 + padding)) return false;
+            if (pathAnimalStaticObstacles.some(obstacle => Math.hypot(x - obstacle.x, z - obstacle.z) < obstacle.radius + padding)) return false;
+            if (markers.some(marker => {
+                if (marker === currentAnimal.group) return false;
+                const model = marker.userData.info && marker.userData.info.model;
+                const radius = model === 'spaceship' ? 5 : (model === 'cake' ? 4.4 : (model === 'gear' ? 4 : (model === 'profile' ? 4.2 : (model === 'orchestra-star' ? 1.35 : 3.2))));
+                return Math.hypot(x - marker.position.x, z - marker.position.z) < radius + padding;
+            })) return false;
+            if (pathAnimals.some(animal => animal !== currentAnimal && Math.hypot(x - animal.group.position.x, z - animal.group.position.z) < 1.7 + padding * 0.25)) return false;
+            return true;
+        }
+        pathAnimals.forEach(animal => {
+            if (isPathAnimalSpotClear(animal.homeX, animal.homeZ, animal)) return;
+            const origin = { x: animal.homeX, z: animal.homeZ };
+            let destination = null;
+            for (let radius = 0.75; radius <= 5.25 && !destination; radius += 0.5) {
+                for (let step = 0; step < 24; step++) {
+                    const angle = step * Math.PI / 12;
+                    const x = origin.x + Math.cos(angle) * radius;
+                    const z = origin.z + Math.sin(angle) * radius;
+                    if (isPathAnimalSpotClear(x, z, animal)) { destination = { x, z }; break; }
+                }
+            }
+            if (destination) {
+                animal.group.position.x = destination.x; animal.group.position.z = destination.z;
+                animal.homeX = animal.targetX = destination.x; animal.homeZ = animal.targetZ = destination.z;
+            }
+        });
+
+        // Warm ivory moon fixed to the camera sky so it remains in view throughout the island walk.
+        const moonGroup = new THREE.Group();
+        const moonDiscCanvas = document.createElement('canvas'); moonDiscCanvas.width = 256; moonDiscCanvas.height = 256;
+        const moonDiscCtx = moonDiscCanvas.getContext('2d');
+        const moonDiscGradient = moonDiscCtx.createRadialGradient(105, 96, 8, 128, 128, 121);
+        moonDiscGradient.addColorStop(0, 'rgba(255,249,225,0.93)'); moonDiscGradient.addColorStop(0.56, 'rgba(245,230,192,0.88)');
+        moonDiscGradient.addColorStop(0.83, 'rgba(226,211,171,0.72)'); moonDiscGradient.addColorStop(0.94, 'rgba(221,204,162,0.25)'); moonDiscGradient.addColorStop(1, 'rgba(221,204,162,0)');
+        moonDiscCtx.fillStyle = moonDiscGradient; moonDiscCtx.fillRect(0, 0, 256, 256);
+        // Faint lunar maria and craters give the soft disc a little surface detail.
+        [[78,88,18],[157,73,12],[164,151,22],[91,169,10],[119,124,7]].forEach(([cx,cy,r], index) => {
+            const crater = moonDiscCtx.createRadialGradient(cx-r*.25,cy-r*.3,r*.08,cx,cy,r);
+            crater.addColorStop(0, `rgba(133,119,88,${index % 2 ? 0.08 : 0.11})`); crater.addColorStop(1, 'rgba(133,119,88,0)');
+            moonDiscCtx.fillStyle = crater; moonDiscCtx.beginPath(); moonDiscCtx.arc(cx,cy,r,0,Math.PI*2); moonDiscCtx.fill();
+        });
+        const moonDisc = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(moonDiscCanvas), transparent: true, depthTest: false, depthWrite: false, fog: false }));
+        moonDisc.scale.set(5.7, 5.7, 1); moonDisc.renderOrder = 20; moonGroup.add(moonDisc);
+        const moonCanvas = document.createElement('canvas'); moonCanvas.width = 256; moonCanvas.height = 256;
+        const moonCtx = moonCanvas.getContext('2d');
+        const moonGlow = moonCtx.createRadialGradient(128, 128, 16, 128, 128, 126);
+        moonGlow.addColorStop(0, 'rgba(255,232,183,0.24)'); moonGlow.addColorStop(0.35, 'rgba(255,218,160,0.10)'); moonGlow.addColorStop(1, 'rgba(255,210,150,0)');
+        moonCtx.fillStyle = moonGlow; moonCtx.fillRect(0, 0, 256, 256);
+        const moonHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(moonCanvas), color: 0xe3d6ad, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, fog: false }));
+        moonHalo.scale.set(16, 16, 1); moonHalo.position.z = -0.5; moonHalo.renderOrder = 19; moonGroup.add(moonHalo);
+        moonGroup.position.set(28, 23, -82); camera.add(moonGroup);
+
+        // Fireflies Particle System
+        const fireflyCount = 100;
+        const firefliesGeo = new THREE.BufferGeometry();
+        const firefliesPos = new Float32Array(fireflyCount * 3);
+        const firefliesInit = [];
+        for(let i=0; i<fireflyCount; i++) {
+            const x = (Math.random() - 0.5) * (grassRadius * 1.8);
+            const y = 1.5 + Math.random() * 4;
+            const z = (Math.random() - 0.5) * (grassRadius * 1.8);
+            firefliesPos[i*3] = x; firefliesPos[i*3+1] = y; firefliesPos[i*3+2] = z;
+            firefliesInit.push({x, y, z, phase: Math.random()*100, speed: 0.5 + Math.random()});
+        }
+        firefliesGeo.setAttribute('position', new THREE.BufferAttribute(firefliesPos, 3));
+        const firefliesMat = new THREE.PointsMaterial({ color: 0xaaff00, size: 0.5, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
+        const fireflies = new THREE.Points(firefliesGeo, firefliesMat);
+        scene.add(fireflies);
+
+        // A low, soft cloud bank parts during the opening flight to reveal the island below.
+        const introCloudMat = new THREE.MeshBasicMaterial({ color: 0x8d9cab, transparent: true, opacity: 0.36, depthWrite: false, fog: false });
+        const introClouds = [];
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const direction = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
+            const cloud = new THREE.Group();
+            const puffCount = 4 + (i % 3);
+            for (let puff = 0; puff < puffCount; puff++) {
+                const radius = 12 + Math.random() * 11;
+                const sphere = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 12), introCloudMat);
+                sphere.position.set((Math.random() - 0.5) * 28, (Math.random() - 0.5) * 7, (Math.random() - 0.5) * 24);
+                sphere.scale.y = 0.38 + Math.random() * 0.22;
+                cloud.add(sphere);
+            }
+            cloud.position.set(direction.x * 17, 32 + Math.random() * 12, direction.z * 17);
+            scene.add(cloud);
+            introClouds.push({ group: cloud, direction });
+        }
+
+        let isIntroPlaying = true;
+        let globalTime = 0;
+        
+        // Setup initial camera view (High up looking at sea)
+        const currentCameraPos = new THREE.Vector3(0, 132, pierZ + 250);
+        const currentLookAt = new THREE.Vector3(0, 0, 0);
+        camera.position.copy(currentCameraPos);
+        camera.lookAt(currentLookAt);
+
+        const skipBtn = document.getElementById('skip-btn');
+        const instructions = document.getElementById('instructions');
+        const languageGate = document.getElementById('language-gate');
+        function applySiteLanguage(language) {
+            siteLanguage = language === 'en' ? 'en' : 'zh';
+            document.documentElement.lang = siteLanguage;
+            document.title = siteLanguage === 'zh' ? '何雨萱｜个人作品集' : 'Yuxuan HE | Portfolio';
+            document.getElementById('intro-message').textContent = siteLanguage === 'zh' ? '驶向小岛……' : 'APPROACHING THE ISLAND…';
+            skipBtn.textContent = siteLanguage === 'zh' ? '跳过开场 ⏭' : 'SKIP INTRO ⏭';
+            document.getElementById('instructions-title').textContent = siteLanguage === 'zh' ? '夜间探索' : 'Night Exploration';
+            document.getElementById('instructions-controls').textContent = siteLanguage === 'zh' ? '操作方式：' : 'Controls:';
+            document.getElementById('instructions-hint').textContent = siteLanguage === 'zh'
+                ? '沿发光小径探索作品。'
+                : 'Follow the glowing paths to explore my work.';
+            document.getElementById('port-close').setAttribute('aria-label', siteLanguage === 'zh' ? '关闭介绍卡片' : 'Close portfolio card');
+            document.getElementById('port-close').title = siteLanguage === 'zh' ? '关闭' : 'Close';
+            document.getElementById('port-desc-heading').textContent = siteLanguage === 'zh' ? '作品简介' : 'PROJECT DESCRIPTION';
+            document.getElementById('resume-contact-label').textContent = siteLanguage === 'zh' ? '联系方式' : 'CONTACT';
+            document.getElementById('port-link').textContent = siteLanguage === 'zh' ? '查看作品信息' : 'VIEW PROJECT';
+            document.getElementById('port-extra-heading').textContent = siteLanguage === 'zh' ? '乐团主页' : 'ORCHESTRA CHANNEL';
+            const channelLink = document.getElementById('port-channel-link');
+            const channelLabel = document.getElementById('port-channel-label');
+            channelLabel.textContent = siteLanguage === 'zh' ? channelLabel.dataset.zh : channelLabel.dataset.en;
+            document.getElementById('port-desc-zh').parentElement.classList.toggle('hidden', siteLanguage !== 'zh');
+            document.getElementById('port-desc-en').parentElement.classList.toggle('hidden', siteLanguage !== 'en');
+            signTextureRedrawers.forEach(redraw => redraw());
+        }
+        document.querySelectorAll('[data-site-language]').forEach(button => {
+            button.addEventListener('click', () => {
+                applySiteLanguage(button.dataset.siteLanguage);
+                languageGate.classList.add('hidden');
+                setTimeout(() => {
+                    document.getElementById('intro-mask').classList.add('hidden');
+                    skipBtn.classList.remove('hidden');
+                    playIntro();
+                }, 250);
+            });
+        });
+
+        // Build the intro only after language selection; an empty autoplaying timeline can
+        // complete before the visitor gets a chance to start the opening sequence.
+        const tl = gsap.timeline({
+            paused: true,
+            onComplete: () => {
+                isIntroPlaying = false;
+                instructions.classList.add('active');
+                skipBtn.style.display = 'none';
+                setTimeout(() => { instructions.classList.remove('active'); }, 8000);
+            }
+        });
+
+        function playIntro() {
+            isIntroPlaying = true;
+            // Camera tracks boat moving in
+            const camMidObj = { x: 0, y: 132, z: pierZ + 250, lx: 0, ly: 0, lz: 0 };
+            const jumpTime = 5.8; // Let the boat reach the pier and settle before the cat jumps.
+            tl.call(() => { catGroup.visible = true; }, [], jumpTime - 0.18);
+            tl.to(introCloudMat, { opacity: 0, duration: 5.1, ease: "power1.in" }, 0.2);
+            introClouds.forEach(({ group, direction }) => {
+                tl.to(group.position, {
+                    x: group.position.x + direction.x * 72,
+                    y: group.position.y + 24,
+                    z: group.position.z + direction.z * 72,
+                    duration: 5.1,
+                    ease: "power1.inOut"
+                }, 0.2);
+                tl.to(group.scale, { x: 1.35, y: 1.25, z: 1.35, duration: 5.1, ease: "power1.out" }, 0.2);
+            });
+            
+            // 1. Boat and Cat sail to dock simultaneously
+            tl.to([boatGroup.position, catGroup.position], { 
+                z: boatDockZ, 
+                duration: 5, 
+                ease: "power2.inOut" 
+            }, 0);
+            // Turn and move the boat aside only after the cat has landed on the pier.
+            tl.to(boatGroup.rotation, { y: Math.PI / 2, duration: 0.8, ease: "power2.inOut" }, jumpTime + 1.25);
+            tl.to(boatGroup.position, { x: 5.2, duration: 0.8, ease: "power2.inOut" }, jumpTime + 1.25);
+
+            // Camera swoops down slightly during sail
+            tl.to(camMidObj, {
+                x: 30, y: 30, z: boatDockZ + 40,
+                lx: 0, ly: 2, lz: boatDockZ,
+                duration: 5,
+                ease: "power1.inOut",
+                onUpdate: () => {
+                    if(isIntroPlaying) {
+                        currentCameraPos.set(camMidObj.x, camMidObj.y, camMidObj.z);
+                        currentLookAt.set(camMidObj.lx, camMidObj.ly, camMidObj.lz);
+                    }
+                }
+            }, 0);
+
+            // 2. Cat jumps from boat to pier
+            tl.to(catGroup.position, { y: 6, duration: 0.45, ease: "power1.out" }, jumpTime);
+            tl.to(catGroup.position, { z: pierZ + 4, duration: 1.15, ease: "linear" }, jumpTime);
+            tl.to(catGroup.position, { y: 1.5, duration: 0.7, ease: "power1.in" }, jumpTime + 0.45);
+
+            // 3. Camera swoops to 3rd person behind cat
+            const camEndObj = { x: camMidObj.x, y: camMidObj.y, z: camMidObj.z, lx: camMidObj.lx, ly: camMidObj.ly, lz: camMidObj.lz };
+            tl.to(camEndObj, {
+                x: 0, y: 8, z: pierZ + 16,
+                lx: 0, ly: 2, lz: pierZ - 10,
+                duration: 2.5,
+                ease: "power3.inOut",
+                onUpdate: () => {
+                    if(isIntroPlaying) {
+                        currentCameraPos.set(camEndObj.x, camEndObj.y, camEndObj.z);
+                        currentLookAt.set(camEndObj.lx, camEndObj.ly, camEndObj.lz);
+                    }
+                }
+            }, jumpTime);
+            tl.play(0);
+        }
+
+        skipBtn.addEventListener('click', () => {
+            tl.progress(1); // Force timeline to end instantly
+            // Ensure final positions are correct if skipped
+            boatGroup.position.z = boatDockZ;
+            boatGroup.position.x = 5.2;
+            boatGroup.rotation.y = Math.PI / 2;
+            catGroup.visible = true;
+            catGroup.position.set(0, 1.5, pierZ + 4);
+            currentCameraPos.set(0, 8, pierZ + 16);
+            currentLookAt.set(0, 2, pierZ - 10);
+        });
+
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+        window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+        let activePortfolio = null;
+        let activePortfolioInfo = null;
+        const uiOverlay = document.getElementById('portfolio-overlay');
+        const portVideo = document.getElementById('port-video');
+        const portBilibiliFrame = document.getElementById('port-bilibili-frame');
+        const portMediaShell = document.getElementById('port-media-shell');
+        const portVideoList = document.getElementById('port-video-list');
+        let selectedPortfolioVideo = null;
+        let portfolioVideoActive = false;
+        const ambientTracks = [
+            { audio: document.getElementById('ambient-wave'), volume: 0.005 },
+            { audio: document.getElementById('ambient-forest'), volume: 1 }
+        ];
+        let ambientAudioStarted = false;
+        let ambientFadeFrame = 0;
+        let ambientFadeToken = 0;
+        function fadeAmbientAudio(targetLevel, duration) {
+            const token = ++ambientFadeToken;
+            if (ambientFadeFrame) cancelAnimationFrame(ambientFadeFrame);
+            const starts = ambientTracks.map(({ audio }) => audio.volume);
+            const startTime = performance.now();
+            const step = now => {
+                if (token !== ambientFadeToken) return;
+                const progress = duration <= 0 ? 1 : Math.min(1, (now - startTime) / duration);
+                ambientTracks.forEach(({ audio, volume }, index) => {
+                    audio.volume = starts[index] + (volume * targetLevel - starts[index]) * progress;
+                });
+                if (progress < 1) ambientFadeFrame = requestAnimationFrame(step);
+                else ambientFadeFrame = 0;
+            };
+            ambientFadeFrame = requestAnimationFrame(step);
+        }
+        function startAmbientAudio() {
+            if (ambientAudioStarted) return;
+            ambientAudioStarted = true;
+            const playAttempts = ambientTracks.map(({ audio }) => {
+                audio.volume = 0;
+                return audio.play();
+            });
+            Promise.allSettled(playAttempts).then(results => {
+                if (results.some(result => result.status === 'rejected')) ambientAudioStarted = false;
+            });
+            fadeAmbientAudio(1, 3000);
+        }
+        window.addEventListener('pointerdown', startAmbientAudio, { passive: true });
+        const playContainer = document.getElementById('play-icon-container');
+        const uiElements = {
+            title: document.getElementById('port-title'),
+            descZh: document.getElementById('port-desc-zh'),
+            descEn: document.getElementById('port-desc-en'),
+            badge: document.getElementById('port-color-badge'),
+            link: document.getElementById('port-link'),
+            play: document.getElementById('play-text'),
+            descHeading: document.getElementById('port-desc-heading'),
+            resumeContact: document.getElementById('port-resume-contact'),
+            extraLinks: document.getElementById('port-extra-links')
+        };
+
+        function escapeResumeText(value) {
+            return value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+        }
+        function formatResume(text, language) {
+            if (language === 'zh') {
+                text = text.replace('何雨萱  /  Yuxuan HE', '何雨萱').replace('出生年份 · 2004', '出生年份：2004');
+            } else {
+                text = text.replace('Yuxuan HE  /  何雨萱', 'Yuxuan HE').replace('Born · 2004', 'Born: 2004');
+            }
+            const labels = language === 'zh'
+                ? ['教育背景', '实习经历', '实践经历', '联系方式']
+                : ['EDUCATION', 'INTERNSHIP EXPERIENCE', 'PRACTICAL EXPERIENCE', 'CONTACT'];
+            const rows = text.split('\n').map(row => row.trim()).filter(Boolean);
+            const firstSectionIndex = rows.findIndex(row => labels.includes(row));
+            const identityRows = firstSectionIndex > 0 ? rows.slice(0, firstSectionIndex) : [];
+            const sections = new Map(labels.map(label => [label, []]));
+            let current = null;
+            rows.forEach(row => {
+                if (sections.has(row)) current = row;
+                else if (current) sections.get(current).push(row);
+            });
+            const card = (content, extra = '') => `<div class="rounded-xl border border-white/10 bg-slate-950/45 p-3 ${extra}">${content}</div>`;
+            const sectionHeader = (index, title) => `<div class="mb-2 flex items-center gap-2"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-violet-300/15 text-[9px] font-black tracking-wide text-violet-100">${index}</span><h4 class="text-[12px] font-black tracking-wide text-white">${title}</h4></div>`;
+            const result = [];
+            if (identityRows.length) {
+                const name = escapeResumeText(identityRows[0]);
+                const birth = escapeResumeText(identityRows[1] || '');
+                result.push(`<section class="mb-1">${card(`<div class="text-[15px] font-black tracking-wide text-white">${name}</div><div class="mt-1 text-[10px] font-bold tracking-wide text-cyan-100/80">${birth}</div>`, 'border-cyan-200/25 bg-gradient-to-r from-cyan-300/[0.12] to-violet-300/[0.08]')}</section>`);
+            }
+            const education = sections.get(labels[0]) || [];
+            result.push(`<section>${sectionHeader('01', labels[0])}${education.map(row => {
+                const parts = row.split(/[｜|]/);
+                const years = escapeResumeText(parts.shift() || '');
+                const institution = escapeResumeText(parts.shift() || '');
+                const details = escapeResumeText(parts.join('｜'));
+                return card(`<div class="mb-1 text-[9px] font-black tracking-wider text-cyan-200">${years}</div><div class="text-[12px] font-extrabold leading-snug text-white">${institution}</div><div class="mt-1 text-[10px] leading-relaxed text-slate-300">${details}</div>`, 'mb-2');
+            }).join('')}</section>`);
+            const internshipRows = sections.get(labels[1]) || [];
+            const jobs = [];
+            let job = null;
+            internshipRows.forEach(row => {
+                if (row.startsWith('·')) { if (job) job.items.push(row.slice(1).trim()); }
+                else if (/\d{4}.*(?:–|-)|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(row)) { if (job) job.date = row; }
+                else { job = { title: row, date: '', items: [] }; jobs.push(job); }
+            });
+            result.push(`<section>${sectionHeader('02', labels[1])}${jobs.map(job => {
+                const [company, role] = job.title.split(/[｜|]/);
+                const bullets = job.items.map(item => {
+                    const splitAt = item.search(/[：:]/);
+                    const lead = splitAt >= 0 ? item.slice(0, splitAt) : '';
+                    const body = splitAt >= 0 ? item.slice(splitAt + 1).trim() : item;
+                    return `<div class="relative pl-3 text-[10px] leading-[1.65] text-slate-300 before:absolute before:left-0 before:top-[0.55em] before:h-1 before:w-1 before:rounded-full before:bg-cyan-300"><span class="font-bold text-slate-100">${escapeResumeText(lead)}</span>${lead ? (language === 'zh' ? '：' : ': ') : ''}${escapeResumeText(body)}</div>`;
+                }).join('<div class="h-2"></div>');
+                return card(`<div class="flex flex-wrap items-start justify-between gap-1"><div><div class="text-[12px] font-black text-white">${escapeResumeText(company || job.title)}</div>${role ? `<div class="mt-0.5 text-[10px] font-semibold text-cyan-100/85">${escapeResumeText(role)}</div>` : ''}</div><span class="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2 py-1 text-[8px] font-bold text-cyan-100">${escapeResumeText(job.date)}</span></div><div class="mt-2 border-t border-white/10 pt-2">${bullets}</div>`, 'mb-2');
+            }).join('')}</section>`);
+            const practiceItems = sections.get(labels[2]) || [];
+            result.push(`<section>${sectionHeader('03', labels[2])}${practiceItems.map(item => {
+                const splitAt = item.search(/[：:]/);
+                const lead = splitAt >= 0 ? item.slice(0, splitAt) : '';
+                const body = splitAt >= 0 ? item.slice(splitAt + 1).trim() : item;
+                const isJam = language === 'zh' ? lead.includes('游戏赛事') : lead.toLowerCase().includes('game jam');
+                const isOrchestra = language === 'zh' ? lead.includes('乐团经历') : lead.toLowerCase().includes('orchestra experience');
+                const notePrefix = language === 'zh' ? '注：' : 'Note:';
+                const noteIndex = body.indexOf(notePrefix);
+                const mainBody = noteIndex >= 0 ? body.slice(0, noteIndex).trim() : body;
+                const note = noteIndex >= 0 ? body.slice(noteIndex + notePrefix.length).trim() : '';
+                let bodyHtml = escapeResumeText(mainBody);
+                const achievement = language === 'zh' ? '产出 7 首游戏配乐，若干音效等，完成赛事交付。' : 'Delivered 7 game music tracks and several sound effects for the competition.';
+                bodyHtml = bodyHtml.replace(escapeResumeText(achievement), `<strong class="font-extrabold text-amber-100">${escapeResumeText(achievement)}</strong>`);
+                if (isOrchestra) {
+                    const highlights = language === 'zh' ? ['副团长、笙首席', '5 场以上'] : ['Deputy Head · Sheng Principal', 'over five concerts'];
+                    highlights.forEach(value => { bodyHtml = bodyHtml.replace(escapeResumeText(value), `<strong class="font-extrabold text-amber-100">${escapeResumeText(value)}</strong>`); });
+                }
+                const focusTags = isJam
+                    ? (language === 'zh' ? ['原创配乐', '音效设计', '混音'] : ['Original Score', 'Sound Design', 'Mixing'])
+                    : (isOrchestra
+                        ? (language === 'zh' ? ['艺术特长生', '笙首席', '音乐会演出'] : ['Arts-Track Student', 'Sheng Principal', 'Concerts'])
+                        : (language === 'zh' ? ['音乐设计', '音效设计', '场景化编曲'] : ['Music Design', 'Sound Design', 'Adaptive Scoring']));
+                const badge = language === 'zh'
+                    ? (isJam ? '72 小时创作' : (isOrchestra ? '民族管弦乐团' : '独立游戏'))
+                    : (isJam ? '72 HOUR JAM' : (isOrchestra ? 'ORCHESTRA' : 'INDIE GAMES'));
+                return card(`<div class="mb-2 flex flex-wrap items-center justify-between gap-2"><div class="text-[12px] font-black text-white">${escapeResumeText(lead || (isJam ? 'Game Jam' : 'Independent Games'))}</div><span class="rounded-full border border-violet-200/25 bg-violet-200/10 px-2 py-1 text-[8px] font-black uppercase tracking-wider text-violet-100">${badge}</span></div><div class="text-[10px] leading-[1.75] text-slate-300">${bodyHtml}</div>${note ? `<div class="mt-2 border-l-2 border-violet-200/30 pl-2 text-[9px] leading-relaxed text-violet-100/65">${escapeResumeText(note)}</div>` : ''}<div class="mt-3 flex flex-wrap gap-1.5">${focusTags.map(tag => `<span class="rounded-full bg-cyan-200/10 px-2 py-1 text-[8px] font-bold text-cyan-100">${tag}</span>`).join('')}</div>`, 'border-violet-200/20 bg-gradient-to-br from-violet-300/[0.08] to-slate-950/55');
+            }).join('')}</section>`);
+            return `<div class="space-y-4">${result.join('')}</div>`;
+        }
+
+        document.getElementById('port-close').addEventListener('click', () => {
+            uiOverlay.classList.remove('active');
+            uiElements.extraLinks.classList.add('hidden');
+            portfolioVideoActive = false;
+            fadeAmbientAudio(1, 3000);
+            portVideo.pause();
+            portVideo.removeAttribute('src');
+            portVideo.load();
+            portBilibiliFrame.removeAttribute('src');
+            portBilibiliFrame.classList.add('hidden');
+            selectedPortfolioVideo = null;
+            portVideoList.replaceChildren();
+            portVideoList.classList.add('hidden');
+            portVideo.classList.add('hidden');
+            playContainer.classList.remove('hidden');
+            uiElements.play.classList.remove('hidden');
+        });
+        uiElements.link.addEventListener('click', () => {
+            if (activePortfolioInfo && activePortfolioInfo.link) {
+                window.open(activePortfolioInfo.link, '_blank', 'noopener,noreferrer');
+            }
+        });
+
+        function playPortfolioVideo(src) {
+            if (!src) return;
+            selectedPortfolioVideo = src;
+            portfolioVideoActive = false;
+            portVideo.pause();
+            portVideo.src = src;
+            portVideo.classList.remove('hidden');
+            playContainer.classList.add('hidden');
+            uiElements.play.classList.add('hidden');
+            portVideo.load();
+            portfolioVideoActive = true;
+            fadeAmbientAudio(0, 1000);
+            portVideo.play().catch(() => {
+                portfolioVideoActive = false;
+                fadeAmbientAudio(1, 3000);
+                portVideo.classList.remove('hidden');
+                playContainer.classList.remove('hidden');
+                uiElements.play.classList.remove('hidden');
+            });
+        }
+        playContainer.addEventListener('click', () => {
+            if (!activePortfolioInfo) return;
+            playPortfolioVideo(selectedPortfolioVideo || activePortfolioInfo.video);
+        });
+        portVideo.addEventListener('play', () => {
+            if (portfolioVideoActive) return;
+            portfolioVideoActive = true;
+            fadeAmbientAudio(0, 1000);
+        });
+        portVideo.addEventListener('pause', () => {
+            if (portfolioVideoActive && !portVideo.ended) {
+                portfolioVideoActive = false;
+                fadeAmbientAudio(1, 3000);
+            }
+        });
+        portVideo.addEventListener('ended', () => {
+            portfolioVideoActive = false;
+            fadeAmbientAudio(1, 3000);
+        });
+        portVideo.addEventListener('error', () => {
+            portfolioVideoActive = false;
+            fadeAmbientAudio(1, 3000);
+        });
+
+        const moveSpeed = 0.375;
+        const rotSpeed = 0.06;
+        let forwardHeld = false;
+        let reverseHeld = false;
+        let autoTurnTarget = null;
+        const reverseTurnRate = 0.105;
+        let cameraYaw = catGroup.rotation.y;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            globalTime += 0.016; 
+
+            // Ocean Wave Animation
+            const positions = ocean.geometry.attributes.position;
+            for (let i = 0; i < positions.count; i++) {
+                const x = positions.getX(i);
+                const y = positions.getY(i); 
+                const z = oceanInitZ[i] + Math.sin(x * 0.1 + globalTime * 1.5) * 0.4 + Math.cos(y * 0.1 + globalTime * 1.0) * 0.4;
+                positions.setZ(i, z);
+            }
+            positions.needsUpdate = true;
+            ocean.geometry.computeVertexNormals();
+
+            const glintPositions = seaGlintsMesh.geometry.attributes.position.array;
+            seaGlints.forEach((glint, i) => {
+                glintPositions[i * 3] = glint.x + Math.sin(globalTime * 0.35 + glint.phase) * 1.2;
+                glintPositions[i * 3 + 1] = Math.sin(glint.x * 0.1 + globalTime * 1.5) * 0.4 + Math.cos(glint.z * 0.1 + globalTime) * 0.4 + 0.12;
+                glintPositions[i * 3 + 2] = glint.z;
+            });
+            seaGlintsMesh.geometry.attributes.position.needsUpdate = true;
+            seaGlintMat.opacity = 0.3 + (Math.sin(globalTime * 1.3) + 1) * 0.12;
+            // Boat Bobbing
+            boatGroup.position.y = -1 + Math.sin(globalTime * 2) * 0.15;
+            boatGroup.rotation.x = Math.sin(globalTime * 1.5) * 0.03;
+
+            // Fireflies movement
+            const ffPositions = fireflies.geometry.attributes.position.array;
+            for(let i=0; i<fireflyCount; i++) {
+                const init = firefliesInit[i];
+                const t = globalTime * init.speed + init.phase;
+                ffPositions[i*3] = init.x + Math.sin(t) * 2;
+                ffPositions[i*3+1] = init.y + Math.cos(t * 0.8) * 1.5;
+                ffPositions[i*3+2] = init.z + Math.sin(t * 1.2) * 2;
+            }
+            fireflies.geometry.attributes.position.needsUpdate = true;
+            pathAnimals.forEach(animalState => {
+                const { group, head, ears, tail, legs, kind, baseY, homeX, homeZ, phase } = animalState;
+                const idle = globalTime * 1.4 + phase;
+                if (!animalState.moving && globalTime >= animalState.nextMoveAt) {
+                    for (let attempt = 0; attempt < 18 && !animalState.moving; attempt++) {
+                        const direction = Math.random() * Math.PI * 2;
+                        const radius = 0.45 + Math.random() * 0.8;
+                        const targetX = homeX + Math.cos(direction) * radius;
+                        const targetZ = homeZ + Math.sin(direction) * radius;
+                        if (isPathAnimalSpotClear(targetX, targetZ, animalState)) {
+                            animalState.targetX = targetX;
+                            animalState.targetZ = targetZ;
+                            animalState.moving = true;
+                        }
+                    }
+                    if (!animalState.moving) animalState.nextMoveAt = globalTime + 1.5 + Math.random() * 2.5;
+                }
+                let walkSpeed = 0;
+                if (animalState.moving) {
+                    const dx = animalState.targetX - group.position.x;
+                    const dz = animalState.targetZ - group.position.z;
+                    const distance = Math.hypot(dx, dz);
+                    if (distance < 0.045) {
+                        group.position.x = animalState.targetX;
+                        group.position.z = animalState.targetZ;
+                        animalState.moving = false;
+                        animalState.nextMoveAt = globalTime + 2 + Math.random() * 4;
+                    } else {
+                        const step = Math.min(distance, (kind === 'rabbit' ? 0.82 : 0.58) * 0.016);
+                        const nextX = group.position.x + dx / distance * step;
+                        const nextZ = group.position.z + dz / distance * step;
+                        if (isPathAnimalSpotClear(nextX, nextZ, animalState, 0.72)) {
+                            walkSpeed = kind === 'rabbit' ? 0.82 : 0.58;
+                            group.position.x = nextX;
+                            group.position.z = nextZ;
+                            const desiredYaw = Math.atan2(-dx, -dz);
+                            const yawDelta = Math.atan2(Math.sin(desiredYaw - group.rotation.y), Math.cos(desiredYaw - group.rotation.y));
+                            group.rotation.y += yawDelta * 0.08;
+                        } else {
+                            animalState.moving = false;
+                            animalState.nextMoveAt = globalTime + 0.8 + Math.random() * 1.2;
+                        }
+                    }
+                } else {
+                    const yawDelta = Math.atan2(Math.sin(animalState.homeRotation - group.rotation.y), Math.cos(animalState.homeRotation - group.rotation.y));
+                    group.rotation.y += yawDelta * 0.025;
+                }
+                const walking = walkSpeed > 0;
+                const stepCycle = globalTime * (kind === 'rabbit' ? 9 : 7) + phase;
+                group.position.y = baseY + Math.sin(idle) * 0.018 + (walking ? Math.abs(Math.sin(stepCycle * 2)) * (kind === 'rabbit' ? 0.055 : 0.018) : 0);
+                group.rotation.z = Math.sin(globalTime * 1.1 + phase) * 0.009;
+                head.rotation.y = Math.sin(globalTime * 0.55 + phase) * 0.045;
+                ears.forEach(({ group: ear, side }) => {
+                    ear.rotation.z = ear.baseRotation + Math.sin(globalTime * 1.7 + phase + side) * (walking ? 0.045 : 0.025);
+                });
+                tail.rotation.x = (kind === 'fox' ? -0.28 : 0) + Math.sin(globalTime * (walking ? 3.4 : 1.8) + phase) * 0.055;
+                legs.forEach(({ pivot, phase: legPhase }) => {
+                    pivot.rotation.x = walking ? Math.sin(stepCycle + legPhase) * 0.34 : Math.sin(idle + legPhase) * 0.018;
+                });
+            });
+            perchedBirds.forEach(({ bird, head, jaw, wings, feet, phase }) => {
+                const idleCycle = (globalTime + phase) % 5.5;
+                const flap = idleCycle < 1.1 ? Math.sin((idleCycle / 1.1) * Math.PI) : 0;
+                bird.position.y = 6.02 + Math.sin(globalTime * 1.2 + phase) * 0.035;
+                bird.rotation.y = Math.sin(globalTime * 0.32 + phase) * 0.055;
+                const lookTurn = idleCycle > 1.25 && idleCycle < 2.35 ? Math.sin(((idleCycle - 1.25) / 1.1) * Math.PI) : 0;
+                head.rotation.y = lookTurn * 0.72;
+                const chirp = idleCycle > 2.55 && idleCycle < 3.55 ? Math.sin(((idleCycle - 2.55) / 1.0) * Math.PI) : 0;
+                jaw.rotation.x = chirp * 0.72;
+                wings.forEach(({ mesh, side }) => {
+                    mesh.rotation.z = side * (0.08 + flap * 1.25);
+                    mesh.rotation.x = flap * 0.35;
+                });
+                feet.forEach(({ mesh, side, baseY }) => {
+                    const stepStart = side < 0 ? 1.55 : 3.85;
+                    const stepWindow = idleCycle > stepStart && idleCycle < stepStart + 0.72;
+                    const stepPhase = (idleCycle - stepStart) / 0.72;
+                    const lift = stepWindow ? Math.sin(stepPhase * Math.PI) * 0.22 : 0;
+                    mesh.position.y = baseY + lift;
+                    mesh.rotation.z = side * lift * 1.8;
+                });
+            });
+            foragingBirds.forEach(({ bird, head, jaw, wings, baseY, phase }) => {
+                const peck = Math.pow(Math.max(0, Math.sin(globalTime * 2.2 + phase)), 8);
+                bird.position.y = baseY - peck * 0.035 + Math.sin(globalTime * 1.1 + phase) * 0.012;
+                head.rotation.x = 0.06 + peck * 0.62;
+                head.rotation.y = Math.sin(globalTime * 0.55 + phase) * 0.12;
+                jaw.rotation.x = -peck * 0.14;
+                const flutter = Math.max(0, Math.sin(globalTime * 0.72 + phase + 1.3));
+                wings.forEach(({ pivot, side }) => { pivot.rotation.z = side * (0.04 + flutter * 0.12); });
+            });
+
+            if (!isIntroPlaying) {
+                // Cat Movement
+                let isMoving = false;
+                const movingForward = keys.w || keys.ArrowUp;
+                const movingBackward = keys.s || keys.ArrowDown;
+                const relativeFacing = Math.atan2(Math.sin(catGroup.rotation.y - cameraYaw), Math.cos(catGroup.rotation.y - cameraYaw));
+                const facingViewer = Math.abs(relativeFacing) > Math.PI * 0.5;
+                if (movingBackward && !reverseHeld && !facingViewer && autoTurnTarget === null) {
+                    autoTurnTarget = catGroup.rotation.y + Math.PI;
+                }
+                if (movingForward && !forwardHeld && facingViewer && autoTurnTarget === null) {
+                    autoTurnTarget = catGroup.rotation.y + Math.PI;
+                }
+                forwardHeld = movingForward;
+                reverseHeld = movingBackward;
+                if (autoTurnTarget !== null) {
+                    const turnDelta = Math.atan2(Math.sin(autoTurnTarget - catGroup.rotation.y), Math.cos(autoTurnTarget - catGroup.rotation.y));
+                    if (Math.abs(turnDelta) < reverseTurnRate) {
+                        catGroup.rotation.y = autoTurnTarget;
+                        autoTurnTarget = null;
+                    } else {
+                        catGroup.rotation.y += Math.sign(turnDelta) * reverseTurnRate;
+                    }
+                }
+                // W/S movement is locked to the viewer's travel axis, independent of the cat's yaw.
+                // Forward goes toward the island; backward goes toward the viewer, including during an auto-turn.
+                if (movingForward && !movingBackward) {
+                    catGroup.position.x -= Math.sin(cameraYaw) * moveSpeed;
+                    catGroup.position.z -= Math.cos(cameraYaw) * moveSpeed;
+                    isMoving = true;
+                } else if (movingBackward && !movingForward) {
+                    catGroup.position.x += Math.sin(cameraYaw) * moveSpeed;
+                    catGroup.position.z += Math.cos(cameraYaw) * moveSpeed;
+                    isMoving = true;
+                }
+                if (autoTurnTarget === null) {
+                    if (keys.a || keys.ArrowLeft) { catGroup.rotation.y += rotSpeed; cameraYaw += rotSpeed; }
+                    if (keys.d || keys.ArrowRight) { catGroup.rotation.y -= rotSpeed; cameraYaw -= rotSpeed; }
+                }
+
+                if (isMoving) {
+                    catBody.position.y = 0.8 + Math.abs(Math.sin(globalTime * 20)) * 0.15;
+                    catGroup.children[4].rotation.x = -Math.PI / 3 + Math.sin(globalTime * 15) * 0.3; // Tail
+                } else {
+                    catBody.position.y = 0.8;
+                }
+
+                // Bounds restriction
+                const distFromCenter = Math.sqrt(catGroup.position.x ** 2 + catGroup.position.z ** 2);
+                if (catGroup.position.z > pierZ - 5) {
+                    catGroup.position.x = Math.max(Math.min(catGroup.position.x, 2.5), -2.5);
+                    catGroup.position.z = Math.min(catGroup.position.z, pierZ + 8);
+                } else if (distFromCenter > grassRadius - 1) {
+                    const angleToCenter = Math.atan2(catGroup.position.x, catGroup.position.z);
+                    catGroup.position.x = Math.sin(angleToCenter) * (grassRadius - 1);
+                    catGroup.position.z = Math.cos(angleToCenter) * (grassRadius - 1);
+                }
+
+                // Spotlight Target Update
+                const forwardVec = new THREE.Vector3(0, -1, -25);
+                forwardVec.applyMatrix4(catGroup.matrixWorld);
+                lightTarget.position.copy(forwardVec);
+
+                // 3rd Person Camera Lerp
+                const idealOffset = new THREE.Vector3(0, 7, 16).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw).add(catGroup.position);
+                const idealLookAt = new THREE.Vector3(0, 2, -15).applyAxisAngle(new THREE.Vector3(0, 1, 0), cameraYaw).add(catGroup.position);
+                
+                currentCameraPos.lerp(idealOffset, 0.08);
+                currentLookAt.lerp(idealLookAt, 0.1);
+                
+                // Portfolio Proximity Check
+                let nearAnyMarker = false;
+                markers.forEach(marker => {
+                    const isCake = marker.userData.info.model === 'cake';
+                    const isProfile = marker.userData.info.model === 'profile';
+                    const isPaperCrane = marker.userData.info.model === 'paper-crane';
+                    const isOrchestraStar = marker.userData.info.model === 'orchestra-star';
+                    if (!isProfile) marker.position.y = marker.userData.originalY + Math.sin(globalTime * 2.2 + marker.userData.phase) * (isCake ? 0.13 : (isOrchestraStar ? 0.035 : 0.4));
+                    if (isCake) {
+                        marker.rotation.x = Math.PI / 4 + Math.sin(globalTime * 1.25 + marker.userData.phase) * 0.035;
+                        marker.rotation.z = 0.06 + Math.sin(globalTime * 1.05 + marker.userData.phase * 0.7) * 0.035;
+                    } else if (marker.userData.info.model === 'diver') {
+                        marker.rotation.x = Math.sin(globalTime * 0.8 + marker.userData.phase) * 0.035;
+                        marker.rotation.y += 0.004;
+                        marker.rotation.z = 0.045;
+                    } else if (isPaperCrane) {
+                        marker.rotation.x = Math.sin(globalTime * 0.75 + marker.userData.phase) * 0.035;
+                        marker.rotation.z = Math.sin(globalTime * 0.6 + marker.userData.phase) * 0.025;
+                        marker.rotation.y += 0.006;
+                        marker.userData.paperWingPivots.forEach(({ wing, side, phase }) => {
+                            wing.rotation.z = side * (0.025 + Math.sin(globalTime * 1.8 + phase) * 0.04);
+                        });
+                    } else if (isOrchestraStar) {
+                        marker.rotation.z = Math.sin(globalTime * 1.1 + marker.userData.phase) * 0.035;
+                        marker.rotation.y += 0.003;
+                    } else if (!isProfile) marker.rotation.x += 0.01;
+                    if (!isProfile && !isOrchestraStar && marker.userData.info.model !== 'diver' && !isPaperCrane) marker.rotation.y += isCake ? 0.012 : 0.015;
+
+                    const markerDistance = catGroup.position.distanceTo(marker.position);
+                    const isNear = isProfile
+                        ? markerDistance < (activePortfolio === marker.userData.info.id ? 11 : 8.5)
+                        : markerDistance < (isOrchestraStar ? 4.8 : 5.5);
+                    const showcase = marker.userData.showcase;
+                    if (showcase) {
+                        showcase.level += ((isNear ? 1 : 0) - showcase.level) * 0.065;
+                        showcase.spot.intensity = 1.65 + showcase.level * 3.0;
+                        showcase.fill.intensity = 2.45 + showcase.level * 2.8;
+                        showcase.baseMat.emissiveIntensity = 0.3 + showcase.level * 0.75;
+                        showcase.trimMat.emissiveIntensity = 0.72 + showcase.level * 1.55;
+                        showcase.groundHalo.material.opacity = 0.14 + showcase.level * 0.28;
+                    }
+                    if (isNear) {
+                        nearAnyMarker = true;
+                        if (!isProfile) { const hoverScale = isOrchestraStar ? 1.06 : 1.4; marker.scale.lerp(new THREE.Vector3(hoverScale, hoverScale, hoverScale), 0.1); }
+                        
+                        if (activePortfolio !== marker.userData.info.id) {
+                            activePortfolio = marker.userData.info.id;
+                            const data = marker.userData.info;
+                            const isOrchestra = data.model === 'orchestra-star';
+                            const isOrchestraVideo = isOrchestra && Boolean(data.videoId);
+                            const isOrchestraChannel = isOrchestra && Boolean(data.channel);
+                            activePortfolioInfo = data;
+                            portfolioVideoActive = false;
+                            fadeAmbientAudio(isOrchestraVideo ? 0 : 1, isOrchestraVideo ? 1000 : 3000);
+                            portVideo.pause();
+                            portVideo.removeAttribute('src');
+                            portVideo.load();
+                            portVideo.classList.add('hidden');
+                            portBilibiliFrame.removeAttribute('src');
+                            portBilibiliFrame.classList.add('hidden');
+                            portMediaShell.classList.toggle('hidden', isProfile || isOrchestraChannel);
+                            uiElements.extraLinks.classList.toggle('hidden', !isOrchestraChannel);
+                            selectedPortfolioVideo = data.videos && data.videos.length ? data.videos[0].src : data.video;
+                            portVideoList.replaceChildren();
+                            portVideoList.classList.toggle('hidden', !data.videos || !data.videos.length || isProfile);
+                            if (data.videos && data.videos.length) {
+                                data.videos.forEach((video, videoIndex) => {
+                                    const choice = document.createElement('button');
+                                    choice.type = 'button';
+                                    const videoTitles = siteLanguage === 'zh'
+                                        ? ['剧情片段 · 飞船电台音乐', '开屏 · 太空启程', '太空结局 · 成为星辰', '回家结局']
+                                        : ['Story & Ship Radio', 'Opening · Out of the Earth', 'Space Ending · Be a Star', 'Home Ending · Back Home'];
+                                    choice.textContent = videoTitles[videoIndex] || video.title;
+                                    choice.className = 'min-h-10 rounded-xl border px-3 py-2 text-left text-[10px] font-bold leading-tight transition-colors ' + (videoIndex === 0 ? 'border-sky-300/80 bg-sky-300/20 text-white' : 'border-white/15 bg-white/5 text-gray-300 hover:bg-white/10');
+                                    choice.addEventListener('click', () => {
+                                        selectedPortfolioVideo = video.src;
+                                        [...portVideoList.children].forEach((button, index) => {
+                                            button.className = 'min-h-10 rounded-xl border px-3 py-2 text-left text-[10px] font-bold leading-tight transition-colors ' + (index === videoIndex ? 'border-sky-300/80 bg-sky-300/20 text-white' : 'border-white/15 bg-white/5 text-gray-300 hover:bg-white/10');
+                                        });
+                                        playPortfolioVideo(video.src);
+                                    });
+                                    portVideoList.appendChild(choice);
+                                });
+                            }
+                            playContainer.classList.toggle('hidden', isOrchestraVideo);
+                            uiElements.play.classList.toggle('hidden', isOrchestraVideo);
+                            if (isOrchestraVideo) {
+                                portBilibiliFrame.src = `https://player.bilibili.com/player.html?bvid=${encodeURIComponent(data.videoId)}&autoplay=0&danmaku=0&refer=1`;
+                                portBilibiliFrame.classList.remove('hidden');
+                            }
+                            if (data.video) {
+                                portVideo.removeAttribute('src');
+                                uiElements.play.textContent = siteLanguage === 'zh' ? data.actionTextZh : data.actionTextEn;
+                            } else {
+                                portVideo.removeAttribute('src');
+                                portVideo.load();
+                                uiElements.play.textContent = siteLanguage === 'zh' ? data.actionTextZh : data.actionTextEn;
+                            }
+                            uiElements.title.textContent = siteLanguage === 'zh' ? data.titleZh : data.titleEn;
+                            uiElements.resumeContact.classList.toggle('hidden', !isProfile);
+                            if (isProfile) {
+                                uiElements.descHeading.textContent = siteLanguage === 'zh' ? '个人履历' : 'CURRICULUM VITAE';
+                                uiElements.descZh.parentElement.className = 'rounded-2xl border border-violet-200/20 bg-gradient-to-br from-violet-300/[0.08] to-cyan-300/[0.035] p-3';
+                                uiElements.descEn.parentElement.className = 'rounded-2xl border border-cyan-200/20 bg-gradient-to-br from-cyan-300/[0.07] to-violet-300/[0.035] p-3';
+                                uiElements.descZh.classList.remove('whitespace-pre-line');
+                                uiElements.descEn.classList.remove('whitespace-pre-line');
+                                uiElements.descZh.innerHTML = formatResume(data.descZh, 'zh');
+                                uiElements.descEn.innerHTML = formatResume(data.descEn, 'en');
+                            } else {
+                                uiElements.descHeading.textContent = siteLanguage === 'zh' ? '作品简介' : 'PROJECT DESCRIPTION';
+                                uiElements.descZh.parentElement.className = 'rounded-xl bg-white/5 p-3';
+                                uiElements.descEn.parentElement.className = 'rounded-xl bg-white/5 p-3';
+                                uiElements.descZh.classList.add('whitespace-pre-line');
+                                uiElements.descEn.classList.add('whitespace-pre-line');
+                                uiElements.descZh.textContent = data.descZh;
+                                uiElements.descEn.textContent = data.descEn;
+                            }
+                            uiElements.descZh.parentElement.classList.toggle('hidden', siteLanguage !== 'zh');
+                            uiElements.descEn.parentElement.classList.toggle('hidden', siteLanguage !== 'en');
+                            document.getElementById('port-desc').classList.toggle('hidden', isOrchestraChannel);
+                            uiElements.resumeContact.classList.toggle('hidden', !isProfile);
+                            uiElements.badge.style.color = data.hex;
+                            uiElements.link.style.backgroundColor = data.hex;
+                            uiElements.link.classList.toggle('hidden', !data.link);
+                            uiOverlay.classList.add('active');
+                        }
+                    } else {
+                        if (!isProfile) marker.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+                    }
+                });
+
+                if (!nearAnyMarker && activePortfolio !== null) {
+                    activePortfolio = null;
+                    activePortfolioInfo = null;
+                    portfolioVideoActive = false;
+                    fadeAmbientAudio(1, 3000);
+                    portVideo.pause();
+                    portVideo.removeAttribute('src');
+                    portVideo.load();
+                    portBilibiliFrame.removeAttribute('src');
+                    portBilibiliFrame.classList.add('hidden');
+                    selectedPortfolioVideo = null;
+                    portVideoList.replaceChildren();
+                    portVideoList.classList.add('hidden');
+                    portVideo.classList.add('hidden');
+                    playContainer.classList.remove('hidden');
+                    uiElements.play.classList.remove('hidden');
+                    uiElements.extraLinks.classList.add('hidden');
+                    uiOverlay.classList.remove('active');
+                }
+            }
+
+            camera.position.copy(currentCameraPos);
+            camera.lookAt(currentLookAt);
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
