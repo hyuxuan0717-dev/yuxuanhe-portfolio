@@ -1266,13 +1266,13 @@
                     titleZh, titleEn, descZh, descEn,
                     actionTextZh: route.actionTextZh, actionTextEn: route.actionTextEn,
                     video: route.id === 'film' && first
-                        ? './影视配乐-关窗/关窗配乐版终稿.mov'
-                        : (isCosmic ? './游戏音乐-Costomic%20Signal/部分cg%2B飞船电台音乐.mp4' : (isOde ? './游戏音乐-Ode%20to%20Machinery/Ode%20to%20Machinery%20by%20Heyuxuan.mp4' : (isDive ? './影视配乐-Dive/diving%20v2.mov' : (isPaperCrane ? './纯音乐-勇气%20命运%20远方/勇气%20命运%20远方.mp4?v=20261022' : '')))),
+                        ? 'https://github.com/hyuxuan0717-dev/yuxuanhe-portfolio/releases/download/portfolio-media-v1/close.window.mov'
+                        : (isCosmic ? 'https://github.com/hyuxuan0717-dev/yuxuanhe-portfolio/releases/download/portfolio-media-v1/cg%2B.mp4' : (isOde ? 'https://github.com/hyuxuan0717-dev/yuxuanhe-portfolio/releases/download/portfolio-media-v1/Ode.to.Machinery.by.Heyuxuan.mp4' : (isDive ? 'Dive/diving%20v2.mov	https://github.com/hyuxuan0717-dev/yuxuanhe-portfolio/releases/download/portfolio-media-v1/dive.mov' : (isPaperCrane ? 'https://github.com/hyuxuan0717-dev/yuxuanhe-portfolio/releases/download/portfolio-media-v1/courage.mp4' : '')))),
                     videos: isCosmic ? [
-                        { title: '剧情片段 · 飞船电台音乐 / Story & Ship Radio', src: './游戏音乐-Costomic%20Signal/部分cg%2B飞船电台音乐.mp4' },
-                        { title: '开屏 · Out of the Earth / Opening', src: './游戏音乐-Costomic%20Signal/开屏-Out%20of%20The%20Earth.mp4' },
-                        { title: '太空结局 · Be a Star / Space Ending', src: './游戏音乐-Costomic%20Signal/太空结局-Be%20a%20Star.mp4' },
-                        { title: '回家结局 · Back Home / Home Ending', src: './游戏音乐-Costomic%20Signal/回家结局-Back%20Home.mp4' }
+                        { title: '剧情片段 · 飞船电台音乐 / Story & Ship Radio', src: 'https://github.com/hyuxuan0717-dev/yuxuanhe-portfolio/releases/download/portfolio-media-v1/cg%2B.mp4' },
+                        { title: '开屏 · Out of the Earth / Opening', src: 'https://github.com/hyuxuan0717-dev/yuxuanhe-portfolio/releases/download/portfolio-media-v1/Out.of.The.Earth.mp4' },
+                        { title: '太空结局 · Be a Star / Space Ending', src: 'https://github.com/hyuxuan0717-dev/yuxuanhe-portfolio/releases/download/portfolio-media-v1/Be.a.Star.mp4' },
+                        { title: '回家结局 · Back Home / Home Ending', src: 'https://github.com/hyuxuan0717-dev/yuxuanhe-portfolio/releases/download/portfolio-media-v1/-Back.Home.mp4' }
                     ] : null,
                     link: isCosmic ? 'https://ldjam.com/events/ludum-dare/59/$427126' : (isOde ? 'https://www.ggac.com/work/detail/1897551' : (isPaperCrane ? 'https://www.ggac.com/work/detail/1897837' : '')),
                     model: isCosmic ? 'spaceship' : (isOde ? 'gear' : (isDive ? 'diver' : (isPaperCrane ? 'paper-crane' : (route.id === 'film' && first ? 'cake' : route.shape)))),
