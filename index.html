@@ -1033,13 +1033,16 @@
             marker.scale.setScalar(1.32);
             marker.position.set(x, 1.05, z);
             pathAnimalStaticObstacles.push({ x, z, radius: 3.8 });
-            if (routeIndex === 0 || routeIndex === 1) {
+                        if (routeIndex === 0 || routeIndex === 1) {
                 // Keep the film and game route mushroom clusters visible by moving nearby pines out of the way.
+                // The film sign's canopy extends beyond the sign itself, so give it a wider clearance.
+                const signTreeClearance = routeIndex === 0 ? 10 : 6;
+                const relocationRadii = routeIndex === 0 ? [11, 13, 15, 17, 19] : [7, 9, 11, 13, 15];
                 pineTreePositions.forEach((tree, treeIndex) => {
-                    if (Math.hypot(x - tree.x, z - tree.z) >= 6) return;
+                    if (Math.hypot(x - tree.x, z - tree.z) >= signTreeClearance) return;
                     let relocation = null;
                     let bestScore = -Infinity;
-                    for (const radius of [7, 9, 11, 13, 15]) {
+                    for (const radius of relocationRadii) {
                         for (let step = 0; step < 32; step++) {
                             const angle = step * Math.PI / 16;
                             const nx = x + Math.cos(angle) * radius;
@@ -1050,6 +1053,7 @@
                             const treeGap = pineTreePositions.reduce((nearest, other, index) => index === treeIndex ? nearest : Math.min(nearest, Math.hypot(nx - other.x, nz - other.z)), Infinity);
                             if (treeGap < 4) continue;
                             const signGap = Math.hypot(nx - x, nz - z);
+                            if (signGap < signTreeClearance) continue;
                             const score = Math.min(pathGap, treeGap, signGap);
                             if (score > bestScore) { bestScore = score; relocation = { x: nx, z: nz }; }
                         }
