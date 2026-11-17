@@ -20,6 +20,37 @@
         #intro-mask { position: fixed; inset: 0; background: #050508; z-index: 50; display: flex; justify-content: center; align-items: center; }
         #language-gate { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(3, 4, 10, 0.88); backdrop-filter: blur(18px); }
         #language-gate.hidden { display: none; }
+        #mobile-controls { display: none; }
+
+@media (max-width: 700px), (pointer: coarse) and (max-width: 900px) {
+    #canvas-container, #canvas-container canvas { width: 100vw; height: 100dvh; }
+    #instructions { top: 10px; left: 10px; padding: 10px 12px; max-width: 190px; border-radius: 16px; }
+    #instructions-title { font-size: 14px; margin-bottom: 3px; }
+    #instructions-controls, #instructions .flex { display: none; }
+    #instructions-hint { font-size: 10px; line-height: 1.35; margin-top: 0; }
+    #portfolio-overlay { position: fixed; inset: auto 8px max(8px, env(safe-area-inset-bottom)); width: auto; max-width: none; max-height: 78dvh; padding: 16px; border-radius: 22px; touch-action: pan-y; }
+    #port-color-badge { margin-bottom: 10px; }
+    #port-title { font-size: 18px; }
+    #port-media-shell { height: 24dvh; min-height: 132px; max-height: 220px; }
+    #port-desc { gap: 8px; }
+    #port-desc section { padding: 10px; }
+    #port-desc-zh, #port-desc-en { font-size: 12px; line-height: 1.5; }
+    #port-close { top: 10px; right: 10px; }
+    #skip-btn { right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); padding: 9px 13px; }
+    #mobile-controls { position: fixed; z-index: 12; left: 12px; bottom: max(12px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(2, 48px); gap: 5px; touch-action: none; }
+    #mobile-controls button { border: 1px solid rgba(255,255,255,.22); border-radius: 15px; color: white; background: rgba(7,10,22,.66); backdrop-filter: blur(10px); font-size: 18px; font-weight: 800; box-shadow: 0 5px 18px rgba(0,0,0,.3); touch-action: none; user-select: none; -webkit-user-select: none; }
+    #mobile-controls button:active, #mobile-controls button.pressed { background: rgba(157,120,255,.45); transform: scale(.96); }
+    #mobile-forward { grid-column: 2; grid-row: 1; }
+    #mobile-left { grid-column: 1; grid-row: 2; }
+    #mobile-back { grid-column: 2; grid-row: 2; }
+    #mobile-right { grid-column: 3; grid-row: 2; }
+}
+
+@media (max-width: 380px) {
+    #mobile-controls { grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(2, 42px); }
+    #mobile-controls button { border-radius: 13px; }
+    #port-media-shell { height: 21dvh; min-height: 118px; }
+}
     </style>
 </head>
 <body class="text-gray-200 selection:bg-gray-700 selection:text-white">
@@ -45,7 +76,12 @@
     <div id="skip-btn" class="absolute bottom-8 right-8 bg-black/50 hover:bg-black/80 backdrop-blur-md px-5 py-2.5 rounded-full text-white text-sm font-bold cursor-pointer border border-white/20 transition-all z-40 shadow-lg hidden">
         跳过开场 ⏭
     </div>
-
+    <div id="mobile-controls" aria-label="触屏移动控制">
+        <button id="mobile-forward" type="button" data-move-key="w" aria-label="前进">↑</button>
+        <button id="mobile-left" type="button" data-move-key="a" aria-label="左转">←</button>
+        <button id="mobile-back" type="button" data-move-key="s" aria-label="后退">↓</button>
+        <button id="mobile-right" type="button" data-move-key="d" aria-label="右转">→</button>
+    </div>
     <!-- Instructions -->
     <div id="instructions" class="ui-panel absolute top-6 left-6 bg-black/70 backdrop-blur-xl px-6 py-5 rounded-2xl shadow-2xl border border-gray-700 z-10">
         <h1 id="instructions-title" class="text-xl font-black mb-2 text-white">夜间探索</h1>
@@ -124,11 +160,12 @@
         scene.background = new THREE.Color(0x050508); // Dark night sky
         scene.fog = new THREE.FogExp2(0x050508, 0.015);
 
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const isCompactViewport = () => window.innerWidth < 700 || (window.matchMedia('(pointer: coarse)').matches && window.innerWidth <= 900); const camera = new THREE.PerspectiveCamera(isCompactViewport() ? 58 : 45, window.innerWidth / window.innerHeight, 0.1, 1000);
         // Camera-mounted sky elements are rendered only when the camera is in the scene graph.
         scene.add(camera);
         
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -664,7 +701,7 @@
                 actionTextZh: '播放短片', actionTextEn: 'PLAY FILM', color: 0x9933ff, hex: '#9933ff', shape: 'cake'
             },
             {
-                id: 'game', name: 'Game Audio', signText: '游戏配乐', signTextEn: 'GAME MUSIC', nameZh: '游戏配乐',
+                id: 'game', name: 'Game Audio', signText: '游戏音乐与音效', signTextEn: 'GAME MUSIC & SOUND', nameZh: '游戏音乐与音效',
                 firstTitleZh: '独立游戏配乐', firstTitleEn: 'Indie Game Audio',
                 firstDescZh: '互动音乐与声音设计作品展示。', firstDescEn: 'Interactive music and sound design showcase.',
                 actionTextZh: '播放音频', actionTextEn: 'PLAY AUDIO', color: 0xff4422, hex: '#ff4422', shape: 'octahedron'
@@ -1952,7 +1989,19 @@
         const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
         window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
         window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
-
+document.querySelectorAll('[data-move-key]').forEach(button => {
+    const moveKey = button.dataset.moveKey;
+    const release = () => { keys[moveKey] = false; button.classList.remove('pressed'); };
+    button.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        keys[moveKey] = true;
+        button.classList.add('pressed');
+        button.setPointerCapture(event.pointerId);
+    });
+    button.addEventListener('pointerup', release);
+    button.addEventListener('pointercancel', release);
+    button.addEventListener('lostpointercapture', release);
+});
         let activePortfolio = null;
         let activePortfolioInfo = null;
         const uiOverlay = document.getElementById('portfolio-overlay');
@@ -2529,10 +2578,19 @@
         }
 
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.fov = isCompactViewport() ? 58 : 45;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.fov = isCompactViewport() ? 58 : 45;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+}
 
         animate();
     </script>
