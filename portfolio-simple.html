@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080910">
+  <title>何雨萱｜作品集</title>
+  <style>
+    :root { color-scheme: dark; --bg:#080910; --panel:rgba(18,20,34,.78); --line:rgba(211,201,255,.14); --text:#f5f3fb; --muted:#aaa8b9; --violet:#c2a8ff; --cyan:#a5e8f3; --amber:#f3d3a0; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; scroll-padding-top:88px; }
+    body { margin:0; color:var(--text); background:radial-gradient(ellipse at 14% 0%,rgba(99,66,151,.22),transparent 34rem),radial-gradient(ellipse at 88% 25%,rgba(34,95,114,.13),transparent 32rem),var(--bg); font-family:"Songti SC","STSong","SimSun","Noto Serif CJK SC","Source Han Serif SC",serif; }
+    a { color:inherit; }
+    .shell { width:min(1120px,calc(100% - 40px)); margin:auto; }
+    .topbar { position:sticky; top:0; z-index:10; border-bottom:1px solid rgba(255,255,255,.08); background:rgba(8,9,16,.78); backdrop-filter:blur(18px); }
+    .topbar-inner { min-height:68px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
+    .brand { color:#fff; text-decoration:none; font-family:inherit; font-size:19px; letter-spacing:.04em; white-space:nowrap; }
+    nav { display:flex; align-items:center; gap:22px; }
+    nav a { color:#c4c1d0; font-size:12px; text-decoration:none; transition:color .2s; }
+    nav a:hover { color:white; }
+    button,select { font:inherit; }
+    .lang-button { border:1px solid var(--line); border-radius:999px; padding:8px 12px; color:#f5efff; background:rgba(161,132,219,.12); cursor:pointer; font-size:11px; font-weight:800; }
+    .mode-link { display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(165,232,243,.3); border-radius:999px; padding:8px 12px; color:#e8fbff; background:rgba(105,190,205,.1); text-decoration:none; font-size:11px; font-weight:800; white-space:nowrap; transition:background .2s,border-color .2s; }
+    .mode-link:hover { background:rgba(105,190,205,.2); border-color:rgba(165,232,243,.65); }
+    .hero { padding:84px 0 68px; }
+    .eyebrow { color:var(--violet); font-size:10px; font-weight:800; letter-spacing:.28em; text-transform:uppercase; }
+    h1 { margin:15px 0 10px; font-family:inherit; font-size:clamp(40px,8vw,76px); line-height:1.05; letter-spacing:.015em; }
+    .hero-meta { display:flex; flex-wrap:wrap; gap:9px; margin-top:26px; }
+    .pill { padding:8px 12px; border:1px solid var(--line); border-radius:999px; color:#d9d3e9; background:rgba(255,255,255,.035); font-size:11px; }
+    .hero-link { display:inline-flex; margin-top:30px; padding:12px 17px; border-radius:12px; color:#15111e; background:linear-gradient(120deg,#ddccff,#b3edf2); text-decoration:none; font-size:12px; font-weight:900; box-shadow:0 0 28px rgba(176,144,255,.16); }
+    .section { padding:26px 0 42px; }
+    .section-head { display:flex; align-items:end; justify-content:space-between; gap:16px; margin-bottom:18px; }
+    .section-kicker { color:var(--violet); font-size:10px; font-weight:900; letter-spacing:.22em; text-transform:uppercase; }
+    h2 { margin:6px 0 0; font-family:inherit; font-size:clamp(25px,4vw,34px); }
+    .section-note { color:var(--muted); font-size:11px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .project,.resume-card { overflow:hidden; border:1px solid var(--line); border-radius:20px; background:linear-gradient(145deg,rgba(25,27,43,.88),rgba(13,15,25,.86)); box-shadow:0 18px 50px rgba(0,0,0,.2); }
+    .project { padding:14px; }
+    .video-box { position:relative; overflow:hidden; aspect-ratio:16/9; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:radial-gradient(ellipse at 50% 40%,rgba(124,98,168,.2),transparent 55%),#05060c; }
+    video,iframe { display:block; width:100%; height:100%; border:0; background:#05060c; object-fit:contain; }
+    .project-body { padding:17px 4px 5px; }
+    .project-top { display:flex; align-items:start; justify-content:space-between; gap:12px; }
+    h3 { margin:0; font-size:18px; line-height:1.35; }
+    .index { color:#9387ae; font:700 10px/1.6 ui-monospace,monospace; letter-spacing:.12em; }
+    .tags { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0 12px; }
+    .tag { color:#d7caff; font-size:10px; }
+    .tag:before { content:"✦"; margin-right:5px; color:#b39bff; }
+    .desc { margin:0; color:#c1bfcb; font-size:12px; line-height:1.85; white-space:pre-line; }
+    .full-description { margin-top:13px; padding-top:11px; border-top:1px solid rgba(255,255,255,.08); }
+    .full-description summary { display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer; color:var(--cyan); font-size:11px; font-weight:800; list-style:none; }
+    .full-description summary::-webkit-details-marker { display:none; }
+    .full-description summary:after { content:"＋"; color:var(--violet); font-size:16px; }
+    .full-description[open] summary:after { content:"−"; }
+    .full-description .desc { margin-top:12px; }
+    .project-links { display:flex; flex-wrap:wrap; gap:9px; margin-top:14px; }
+    .project-links a { color:var(--cyan); font-size:11px; text-decoration:none; }
+    .project-links a:hover { text-decoration:underline; }
+    .video-picker { display:block; width:100%; margin:12px 0 0; padding:10px 12px; border:1px solid var(--line); border-radius:10px; color:#eee9f8; background:#111320; font-size:11px; }
+    .resume-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .resume-card { padding:19px; }
+    .resume-card h3 { margin-bottom:12px; color:var(--amber); font-size:14px; letter-spacing:.04em; }
+    .resume-card p,.resume-card li { color:#c8c5d1; font-size:12px; line-height:1.8; }
+    .resume-card p { margin:7px 0; }
+    .resume-card ul { margin:7px 0 0; padding-left:18px; }
+    .resume-full { grid-column:1/-1; }
+    .resume-item-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .resume-entry { padding:15px; border:1px solid rgba(255,255,255,.08); border-left:2px solid rgba(194,168,255,.55); border-radius:12px; background:rgba(255,255,255,.025); }
+    .resume-entry h4 { margin:0; color:#f0eaff; font-size:13px; line-height:1.55; }
+    .resume-date { margin-top:3px!important; color:#a8a2b8!important; font-size:10px!important; }
+    .resume-entry ul { margin-top:10px; }
+    .resume-entry li { margin:0 0 8px; }
+    .resume-entry li:last-child { margin-bottom:0; }
+    .resume-education-lines { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .resume-education-lines p { margin:0; padding:14px; border-radius:12px; background:rgba(255,255,255,.035); }
+    .bili-load { position:absolute; inset:0; display:grid; place-items:center; width:100%; padding:20px; border:0; color:white; background:radial-gradient(ellipse at 50% 40%,rgba(124,98,168,.22),transparent 55%),rgba(5,6,12,.92); cursor:pointer; }
+    .bili-load span { display:grid; justify-items:center; gap:12px; color:#eee9f8; font-size:12px; font-weight:800; }
+    .bili-play-icon { display:grid; width:56px; height:56px; place-items:center; border:1px solid rgba(255,255,255,.25); border-radius:50%; background:rgba(255,255,255,.08); box-shadow:0 0 28px rgba(194,168,255,.2); font-size:19px; }
+    .contact { margin:10px 0 58px; padding:24px; border:1px solid rgba(165,232,243,.18); border-radius:20px; background:linear-gradient(120deg,rgba(101,76,145,.16),rgba(45,102,117,.12)); }
+    .contact p { color:#c8c5d1; font-size:12px; }
+    .contact a { color:var(--cyan); text-decoration:none; }
+    footer { padding:0 0 28px; color:#777584; font-size:10px; }
+    body.en .zh { display:none!important; } body:not(.en) .en { display:none!important; }
+    @media(max-width:720px) {
+      .shell { width:min(100% - 26px,560px); }
+      .topbar-inner { min-height:60px; gap:10px; }
+      nav { gap:12px; overflow:auto; }
+      nav a { white-space:nowrap; font-size:10px; }
+      .brand { font-size:16px; }
+      .lang-button { padding:7px 9px; }
+      .mode-link { padding:7px 9px; font-size:10px; }
+      .hero { padding:58px 0 44px; }
+      .grid,.resume-grid,.resume-item-grid,.resume-education-lines { grid-template-columns:1fr; }
+      .section { padding:20px 0 30px; }
+      .project { padding:10px; border-radius:17px; }
+      .project-body { padding:14px 3px 4px; }
+      .section-note { display:none; }
+    }
+    @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } *,*:before,*:after { transition:none!important; } }
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="shell topbar-inner">
+    <a class="brand" href="#top">YUXUAN HE</a>
+    <nav aria-label="Main navigation">
+      <a href="#works"><span class="zh">作品</span><span class="en">Work</span></a>
+      <a href="#about"><span class="zh">简历</span><span class="en">Résumé</span></a>
+      <a href="#contact"><span class="zh">联系</span><span class="en">Contact</span></a>
+    </nav>
+    <a class="mode-link" href="./" aria-label="返回3D完整版"><span aria-hidden="true">✦</span><span class="zh">3D完整版</span><span class="en">3D View</span></a>
+    <button id="language-toggle" class="lang-button" type="button" aria-label="Switch language">EN</button>
+  </div></header>
+
+  <main id="top" class="shell">
+    <section class="hero">
+      <div class="eyebrow">COMPOSER · SOUND DESIGNER</div>
+      <h1><span class="zh">何雨萱</span><span class="en">Yuxuan HE</span></h1>
+      <div class="hero-meta"><span class="pill">Composition for Film&amp;TV</span><span class="pill">Game Music &amp; Sound</span><span class="pill">Shanghai Jiao Tong University</span></div>
+      <a class="hero-link" href="#works"><span class="zh">浏览作品 ↓</span><span class="en">EXPLORE THE WORK ↓</span></a>
+    </section>
+
+      <section class="section" id="about">
+        <div class="section-head"><div><div class="section-kicker">RESUME</div><h2><span class="zh">个人简历</span><span class="en">Résumé</span></h2></div></div>
+        <div class="resume-grid">
+          <article class="resume-card resume-full">
+            <h3><span class="zh">教育背景</span><span class="en">Education</span></h3>
+            <div class="resume-education-lines">
+              <p class="zh">2026–2027　布里斯托大学｜影视配乐 硕士</p>
+              <p class="en">2026–2027　University of Bristol | Composition for Film&amp;TV, Master’s</p>
+              <p class="zh">2022–2026　上海交通大学｜广播电视编导 本科<br>　　　　　　　　 GPA：3.8/4.3</p>
+              <p class="en">2022–2026　Shanghai Jiao Tong University | Radio and Television Directing, GPA: 3.8/4.3, Bachelor’s</p>
+            </div>
+          </article>
+
+          <article class="resume-card resume-full">
+            <h3><span class="zh">实习经历</span><span class="en">Internship Experience</span></h3>
+            <div class="resume-item-grid">
+              <section class="resume-entry">
+                <h4><span class="zh">小红书公司｜音乐产品运营</span><span class="en">Xiaohongshu (RED)｜Music Product Operations</span></h4>
+                <p class="resume-date">2024.6–2024.9</p>
+                <ul class="zh">
+                  <li><strong>音乐内容策划与创作：</strong>参与小红书音乐生产的选题策划工作，收集并分类不同风格与不同场景适配音乐，根据流行趋势每周与音乐人商讨策划音乐专辑并跟进制作进度，参与音乐制作，共产出 6 张背景音乐专辑。</li>
+                  <li><strong>音乐包装与分发：</strong>进行音乐专辑包装与上线分发工作，根据不同音乐主题与风格制作音乐专辑封面，为音乐打标促进精准分发与推荐。同时分析上线音乐数据，根据数据调整音乐分发策略。</li>
+                  <li><strong>音乐模板制作与宣传：</strong>制作并上传音乐配套视频模板与剪辑宣传视频，通过生产契合当月热点话题的音乐视频模板提升音乐使用率与用户体验，视频模板总使用量达 10000+。</li>
+                </ul>
+                <ul class="en">
+                  <li><strong>Music content planning and creation:</strong> Participated in topic planning for music production at Xiaohongshu, collecting and categorizing music suited to different styles and scenarios. Planned music albums with musicians each week in response to trends and followed production progress. Participated in music production, contributing to six background music albums.</li>
+                  <li><strong>Music packaging and distribution:</strong> Packaged and distributed music albums, creating covers for different themes and styles and tagging music to support precise distribution and recommendations. Analyzed performance data and adjusted distribution strategies accordingly.</li>
+                  <li><strong>Music template production and promotion:</strong> Created and uploaded music video templates and promotional edits. Templates aligned with monthly trends to increase music use and improve user experience, reaching 10,000+ total uses.</li>
+                </ul>
+              </section>
+              <section class="resume-entry">
+                <h4><span class="zh">喜马拉雅公司｜音频生态治理</span><span class="en">Ximalaya｜Audio Ecosystem Governance</span></h4>
+                <p class="resume-date">2025.10–2026.3</p>
+                <ul class="zh">
+                  <li><strong>音频质量规则标定：</strong>参与建立平台音频分级体系，针对有声书、播客、广播剧等品类制定参数标准及艺术审美标准，独立完成音乐品类质量规则标定。</li>
+                  <li><strong>治理策略迭代：</strong>持续追踪用户对音频质感的反馈并分析流量分发情况，辅助团队优化治理策略，减少劣质内容上传与曝光，确保优质内容得到有效曝光与转化。</li>
+                  <li><strong>机审模型训练：</strong>对声学缺陷进行深度拆解与标注，优化机审 prompt，为算法模型提供高质量训练数据，提升系统对低质音频的拦截效率。</li>
+                </ul>
+                <ul class="en">
+                  <li><strong>Audio quality rule calibration:</strong> Helped establish the platform’s audio grading system and define technical and artistic standards for audiobooks, podcasts, audio dramas, and other categories. Independently calibrated quality rules for music.</li>
+                  <li><strong>Governance strategy iteration:</strong> Tracked user feedback on audio quality and analyzed traffic distribution to help improve governance strategies, reduce low-quality uploads and exposure, and ensure quality content receives effective exposure and conversion.</li>
+                  <li><strong>Automated review model training:</strong> Analyzed and labeled acoustic defects in depth, refined moderation prompts, and prepared high-quality training data to improve the system’s detection of low-quality audio.</li>
+                </ul>
+              </section>
+            </div>
+          </article>
+
+          <article class="resume-card resume-full">
+            <h3><span class="zh">实践经历</span><span class="en">Practical Experience</span></h3>
+            <div class="resume-item-grid">
+              <section class="resume-entry">
+                <h4><span class="zh">游戏赛事</span><span class="en">Game Jam</span></h4>
+                <p class="zh">参与 <strong>Ludum Dare 29 Game Jam</strong> 赛事，在 72 小时高强度创作周期内，独立负责参赛游戏《Costomic Signal》的全流程音频策划与制作，涵盖音效设计、原创音乐创作及后期混音。配合团队需求调整音频风格，确保音效、音乐与游戏画面、玩法节奏高度契合。共<strong>产出 7 首游戏配乐，若干音效等，完成赛事交付。</strong></p>
+                <p class="en">Participated in <strong>Ludum Dare 29 Game Jam</strong>. During the intensive 72-hour creation period, independently led end-to-end audio planning and production for <em>Costomic Signal</em>, including sound design, original music composition, and post-production mixing. Adapted the audio style to team needs so the sound and music fit the visuals and gameplay rhythm. <strong>Delivered seven game music tracks and several sound effects for the competition.</strong></p>
+              </section>
+              <section class="resume-entry">
+                <h4><span class="zh">独立游戏</span><span class="en">Independent Games</span></h4>
+                <p class="zh">负责多部独立游戏音频核心工作，<strong>主导音乐设计与音效设计全流程</strong>，结合游戏不同地图的场景氛围、剧情调性，对主题音乐进行针对性配器调整与编曲优化，打造贴合场景的听觉体验，提升游戏整体沉浸感。<br><br>注：由于部分独游仍在开发过程中，故未在此网页展示。</p>
+                <p class="en">Led core audio work for multiple independent games, <strong>taking charge of the full music and sound design process</strong>. Tailored orchestration and arrangements to the atmosphere and narrative tone of different game maps, creating a fitting listening experience and strengthening immersion.<br><br>Note: Some independent games are still in development and are not shown on this website.</p>
+              </section>
+              <section class="resume-entry">
+                <h4><span class="zh">乐团经历</span><span class="en">Orchestra Experience</span></h4>
+                <p class="zh">作为<strong>艺术特长生</strong>，担任上海交通大学中国民族管弦乐团<strong>副团长、笙首席</strong>；排练 10 余首民族室内乐及大型民族管弦乐作品，参与 5 场以上大型音乐会演出与比赛。</p>
+                <p class="en">As an <strong>arts-track student</strong>, served as <strong>Deputy Head and Sheng Principal</strong> of the Shanghai Jiao Tong University Chinese Orchestra. Rehearsed more than 10 Chinese chamber and large-scale orchestral works, and participated in over five major concerts and competitions.</p>
+              </section>
+            </div>
+          </article>
+        </div>
+      </section>
+
+    <div id="works">
+      <section class="section" id="film">
+        <div class="section-head"><div><div class="section-kicker">01 · FILM</div><h2><span class="zh">影视配乐</span><span class="en">Film Scoring</span></h2></div><div class="section-note">SCORE · SOUND · STORY</div></div>
+        <div class="grid">
+          <article class="project" data-project="close"><div class="video-box"><video controls playsinline preload="none" aria-label="Close the Window film"><source src="https://pub-b70fd5f65cf747a2b7c08cd9f850d4c7.r2.dev/%E5%85%B3%E7%AA%97%E5%8E%8B%E7%BC%A9.mp4" type="video/mp4"></video></div><div class="project-body"><div class="project-top"><h3>关窗</h3><span class="index">FILM SCORE</span></div><div class="tags"><span class="tag"><span class="zh">短片</span><span class="en">Short Film</span></span><span class="tag"><span class="zh">导演 / 配乐</span><span class="en">Director / Composer</span></span></div><p class="desc zh">我执导并负责配乐的短片，呈现抑郁症患者生活中的一个片段。音乐以 F 小调为基础，结合合成器与少量真实乐器，围绕人物情绪逐步建立紧张感。</p><p class="desc en">A short film I directed and scored, portraying a glimpse of life with depression. Built around F minor, the score combines synthesizers and selected acoustic instruments to follow the character’s emotional arc.</p></div></article>
+          <article class="project" data-project="dive"><div class="video-box"><video controls playsinline preload="none" aria-label="DIVE animation score"><source src="https://pub-b70fd5f65cf747a2b7c08cd9f850d4c7.r2.dev/diving%20v2.mov" type="video/quicktime"></video></div><div class="project-body"><div class="project-top"><h3>DIVE</h3><span class="index">FILM SCORE</span></div><div class="tags"><span class="tag"><span class="zh">动画配乐</span><span class="en">Animation Score</span></span><span class="tag"><span class="zh">音效设计</span><span class="en">Sound Design</span></span></div><p class="desc zh">为林俊健导演的动画重新制作音效与配乐。以水下与海洋音效构建兼具宇宙感和科技感的环境；用真实乐器与电子音色区分陆地和水下场景。</p><p class="desc en">Rescoring and sound design for an animation directed by Junjian Lin. Underwater and ocean effects shape a cosmic, technical soundscape; acoustic and electronic palettes distinguish land and underwater scenes.</p></div></article>
+        </div>
+      </section>
+
+      <section class="section" id="game">
+        <div class="section-head"><div><div class="section-kicker">02 · INTERACTIVE</div><h2><span class="zh">游戏音乐与音效</span><span class="en">Game Music &amp; Sound</span></h2></div><div class="section-note">MUSIC · SFX · INTERACTIVE</div></div>
+        <div class="grid">
+          <article class="project" data-project="ode"><div class="video-box"><video controls playsinline preload="none" aria-label="Ode to Machinery project video"><source src="https://cdn-prd.ggac.com/ggac/work/video/resize/04b7db07-3b3c-4927-a9f3-d28d71e23602_resize.mp4" type="video/mp4"></video></div><div class="project-body"><div class="project-top"><h3>Ode to Machinery</h3><span class="index">GAME AUDIO</span></div><div class="tags"><span class="tag"><span class="zh">叠纸游戏创作大赛</span><span class="en">Papergames Creation Contest</span></span><span class="tag"><span class="zh">音乐与音效设计</span><span class="en">Music &amp; Sound Design</span></span></div><p class="desc zh">以黄铜与蒸汽机械为核心风格的游戏音频作品。为关卡玩法、管风琴信徒、蒸汽平台和 Boss 战设计音乐与音效。</p><p class="desc en">An audio project shaped around brass and steam machinery, with music and sound for the level, organ-playing believers, steam-powered platforms, and boss encounters.</p><div class="project-links"><a href="https://www.ggac.com/work/detail/1897551" target="_blank" rel="noopener noreferrer"><span class="zh">查看 GGAC 作品详情 ↗</span><span class="en">View project on GGAC ↗</span></a></div></div></article>
+          <article class="project" data-project="cosmic"><div class="video-box"><video id="cosmic-video" controls playsinline preload="none" aria-label="Cosmic Signal video"><source src="https://pub-b70fd5f65cf747a2b7c08cd9f850d4c7.r2.dev/%E9%83%A8%E5%88%86cg%2B%E9%A3%9E%E8%88%B9%E7%94%B5%E5%8F%B0%E9%9F%B3%E4%B9%90.mp4" type="video/mp4"></video></div><select id="cosmic-video-picker" class="video-picker" aria-label="Select Cosmic Signal video"><option value="https://pub-b70fd5f65cf747a2b7c08cd9f850d4c7.r2.dev/%E9%83%A8%E5%88%86cg%2B%E9%A3%9E%E8%88%B9%E7%94%B5%E5%8F%B0%E9%9F%B3%E4%B9%90.mp4">剧情片段 · 飞船电台音乐 / Story &amp; Ship Radio</option><option value="https://pub-b70fd5f65cf747a2b7c08cd9f850d4c7.r2.dev/%E5%BC%80%E5%B1%8F-Out%20of%20The%20Earth.mp4">开屏 · Out of the Earth / Opening</option><option value="https://pub-b70fd5f65cf747a2b7c08cd9f850d4c7.r2.dev/%E5%A4%AA%E7%A9%BA%E7%BB%93%E5%B1%80-Be%20a%20Star.mp4">太空结局 · Be a Star / Space Ending</option><option value="https://pub-b70fd5f65cf747a2b7c08cd9f850d4c7.r2.dev/%E5%9B%9E%E5%AE%B6%E7%BB%93%E5%B1%80-Back%20Home.mp4">回家结局 · Back Home / Home Ending</option></select><div class="project-body"><div class="project-top"><h3>Cosmic Signal</h3><span class="index">GAME JAM · 2025</span></div><div class="tags"><span class="tag">Ludum Dare 59</span><span class="tag"><span class="zh">音乐 / 音效 / 混音</span><span class="en">Music / SFX / Mixing</span></span></div><p class="desc zh">在 72 小时 Game Jam 中独立负责游戏的全流程音频策划与制作，产出 7 首配乐及多项音效。视频菜单可切换剧情片段、开屏与不同结局。</p><p class="desc en">Led end-to-end audio planning and production during a 72-hour game jam, delivering seven music tracks and multiple sound effects. Select story, opening, or ending videos above.</p><div class="project-links"><a href="https://ldjam.com/events/ludum-dare/59/$427126" target="_blank" rel="noopener noreferrer"><span class="zh">查看 Ludum Dare 作品 ↗</span><span class="en">View the Ludum Dare project ↗</span></a></div></div></article>
+        </div>
+      </section>
+
+      <section class="section" id="music">
+        <div class="section-head"><div><div class="section-kicker">03 · ORIGINAL MUSIC</div><h2><span class="zh">纯音乐</span><span class="en">Original Music</span></h2></div><div class="section-note">COMPOSITION · ORCHESTRATION</div></div>
+        <div class="grid">
+          <article class="project" data-project="courage"><div class="video-box"><video controls playsinline preload="none" aria-label="Courage Destiny Faraway music video"><source src="https://pub-b70fd5f65cf747a2b7c08cd9f850d4c7.r2.dev/%E5%8B%87%E6%B0%94%20%E5%91%BD%E8%BF%90%20%E8%BF%9C%E6%96%B9.mp4" type="video/mp4"></video></div><div class="project-body"><div class="project-top"><h3><span class="zh">勇气 命运 远方</span><span class="en">Courage · Destiny · Faraway</span></h3><span class="index">ORIGINAL SCORE</span></div><div class="tags"><span class="tag"><span class="zh">交响配乐</span><span class="en">Orchestral Score</span></span><span class="tag"><span class="zh">叠纸游戏创作大赛</span><span class="en">Papergames Creation Contest</span></span></div><details class="full-description"><summary><span class="zh">展开完整作品简介</span><span class="en">Read full description</span></summary><p class="desc zh"></p><p class="desc en"></p></details><div class="project-links"><a href="https://www.ggac.com/work/detail/1897837" target="_blank" rel="noopener noreferrer"><span class="zh">查看作品信息 ↗</span><span class="en">View project details ↗</span></a></div></div></article>
+        </div>
+      </section>
+
+      <section class="section" id="orchestra">
+        <div class="section-head"><div><div class="section-kicker">04 · ENSEMBLE</div><h2><span class="zh">民乐团演出</span><span class="en">Chinese Orchestra Performances</span></h2></div><div class="section-note">SHENG · ENSEMBLE</div></div>
+        <div class="grid">
+          <article class="project" data-project="orchestra1"><div class="video-box video-lazy" data-bvid="BV1SkrAYKEWp" data-title="Tea Horse Road"><button class="bili-load" type="button" aria-label="Load and play orchestra video"><span><span class="bili-play-icon" aria-hidden="true">▶</span><span class="zh">点击播放视频</span><span class="en">CLICK TO PLAY</span></span></button></div><div class="project-body"><div class="project-top"><h3><span class="zh">我在民乐团吹笙</span><span class="en">Playing Sheng in the Orchestra</span></h3><span class="index">01</span></div><p class="desc zh">《茶马》｜作曲：李博禅。上海交通大学学生民乐团·交韵室内乐团演出，笙：何雨萱。</p><p class="desc en">“Tea Horse Road,” composed by Li Bochan. Performed by Jiaoyun Chamber Ensemble, Shanghai Jiao Tong University Student Chinese Orchestra. Sheng: Yuxuan He.</p></div></article>
+          <article class="project" data-project="orchestra2"><div class="video-box video-lazy" data-bvid="BV1psg1eSEM3" data-title="Can’t Take My Eyes off You"><button class="bili-load" type="button" aria-label="Load and play orchestra video"><span><span class="bili-play-icon" aria-hidden="true">▶</span><span class="zh">点击播放视频</span><span class="en">CLICK TO PLAY</span></span></button></div><div class="project-body"><div class="project-top"><h3><span class="zh">我在民乐团吹笙</span><span class="en">Playing Sheng in the Orchestra</span></h3><span class="index">02</span></div><p class="desc zh">《Can’t Take My Eyes off You》｜编曲：钟之岳。上海交通大学学生民乐团演出，双笙与民族管弦乐团。</p><p class="desc en">“Can’t Take My Eyes off You,” arranged by Zhong Zhiyue. Two sheng players with the Shanghai Jiao Tong University Student Chinese Orchestra.</p></div></article>
+        </div>
+        <div class="project-links" style="margin-top:16px"><a href="https://b23.tv/BxDLqIH" target="_blank" rel="noopener noreferrer"><span class="zh">上海交大民乐团主页 ↗</span><span class="en">SJTU Chinese Orchestra channel ↗</span></a></div>
+      </section>
+
+
+      <section id="contact" class="contact"><div class="section-kicker">CONTACT</div><h2><span class="zh">联系方式</span><span class="en">Contact Information</span></h2><p><a href="mailto:hyuxuan0717@163.com">hyuxuan0717@163.com</a></p></section>
+    </div>
+    <footer>© <span id="year"></span> Yuxuan HE · Portfolio</footer>
+  </main>
+  <script>
+    const languageButton = document.getElementById('language-toggle');
+    function setLanguage(english) {
+      document.body.classList.toggle('en', english);
+      document.documentElement.lang = english ? 'en' : 'zh-CN';
+      document.title = english ? 'Yuxuan HE | Portfolio' : '何雨萱｜作品集';
+      languageButton.textContent = english ? '中文' : 'EN';
+      languageButton.setAttribute('aria-label', english ? '切换为中文' : 'Switch to English');
+    }
+    languageButton.addEventListener('click', () => setLanguage(!document.body.classList.contains('en')));
+    document.querySelectorAll('.video-lazy').forEach(box => {
+      box.querySelector('.bili-load').addEventListener('click', () => {
+        const iframe = document.createElement('iframe');
+        iframe.title = box.dataset.title;
+        iframe.src = `https://player.bilibili.com/player.html?bvid=${encodeURIComponent(box.dataset.bvid)}&page=1&high_quality=1&danmaku=0&autoplay=1`;
+        iframe.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
+        iframe.allowFullscreen = true;
+        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+        box.replaceChildren(iframe);
+      });
+    });
+    const cosmicVideo = document.getElementById('cosmic-video');
+    document.getElementById('cosmic-video-picker').addEventListener('change', event => {
+      const wasPlaying = !cosmicVideo.paused;
+      cosmicVideo.pause();
+      cosmicVideo.src = event.target.value;
+      cosmicVideo.load();
+      if (wasPlaying) cosmicVideo.play().catch(() => {});
+    });
+
+    const originalDescriptions = {"close": {"zh": "《关窗》是我执导并负责配乐的一部短片，呈现抑郁症患者生活中的一个片段。故事发生在一间普通的大学寝室。生日傍晚，深受抑郁症困扰的木木试图轻生，而毫不知情的室友正准备为她庆祝。短短四分钟里，木木经历病情发作，并在自杀未遂后获救；室友的情绪也随之剧烈起伏。危机暂时解除，但宿舍关系蒙上了阴影。\n\n我希望影片尽可能真实地呈现抑郁症的残酷，以及它对患者身边人的影响。木木承受着病痛折磨，室友也将在可预见的未来长期担忧、受到影响。虽然木木获救，影片整体氛围仍然压抑。\n\n作为导演兼作曲，我希望音乐延续紧张、压抑的氛围。全片以 F 小调为基础，通过合成器与少量真实乐器构建声音。音乐分为四个阶段：前两阶段不断积累冲突；第三阶段加入人声与噪声，描绘患者的内心世界；最后情绪暂时平息，钢琴和小提琴旋律延续悲伤，也暗示角色的未来仍充满变数与艰难。", "en": "Close the Window is a short film I directed and composed the score for. It offers a glimpse into the life of someone living with depression. Set in an ordinary university dorm, the story follows Mumu, who is overwhelmed by depression and considers suicide on her birthday evening. Unaware of her crisis, her roommates are preparing a celebration. In four minutes, Mumu experiences an acute episode and is rescued after a suicide attempt, while her roommates go through intense emotional swings. The immediate crisis passes, but a shadow falls over their relationships.\n\nI hope the film portrays the harsh reality of depression and its impact on those around the person living with it. Mumu suffers from the illness, while her roommates face continuing worry and emotional strain. Although Mumu is rescued, the overall atmosphere remains oppressive.\n\nAs director and composer, I wanted the score to sustain tension and unease. The film is built around F minor, combining synthesizers with a small number of acoustic instruments. Its music unfolds in four stages: the first two build toward the central conflict; voices and noise enter in the third to evoke Mumu's inner world; and, as the immediate crisis settles, piano and violin extend the sadness and suggest an uncertain, difficult future."}, "dive": {"zh": "《Dive》是林俊健执导的一部动画作品。我被这部作品里优美的色彩和创意所吸引，因此选择它来重新制作音效与配乐。\n\n音效：采用不同的水下与海洋音效来构建水环境的氛围，同时设计太空音效，打造出兼具宇宙感与科技感的水下太空环境。\n\n配乐：陆地使用真实乐器，水下场景则使用电子乐器或合成器，以此区分两种场景。在新的音乐风格切入之前，加入一段短暂停顿。\n\n在A部分和C部分的开头，角色处于陆地上时，以长笛作为主乐器，营造平和宁静的氛围。停顿过后，小调转为大调，同时引入包含鼓、电吉他、电钢琴、贝斯以及其他特殊合成器的全新编曲。", "en": "Diving is an animation directed by Junjian Lin. I was attracted by the beautiful colors and ideas in this work, so I chose it to rescore the sound and music.\n\nFor the sound, I used different underwater and sea effects to build the atmosphere of water, and designed space sounds to create a cosmic and technical space room.\n\nFor the music, I used real instruments for scenes on the ground and electronic instruments or synthesizers for underwater scenes to distinguish them. I also added a short pause when the character decided to chase the star, before entering a new musical style.\n\nAt the beginning of Parts A and part C, when the character was on land, flute is the main instrument to create a peaceful and calm mood. After the pause, I shifted from minor to major to represent the change in the character’s mood, introducing a new arrangement with drums, electric guitar, electric piano, bass, and other special synthesizers."}, "ode": {"zh": "本作为“这页纸记得 叠纸游戏2026创作大赛”参赛作品\n\n\n背景介绍\n\n一 关卡玩法\n\n玩家战胜小怪进入BOSS房，战胜BOSS后取得胜利\n\n二 剧情叙事\n\n虔诚的信徒通过弹奏管风琴来歌颂他们的造物主，他们的琴声和歌声通过音箱永不停歇的扩音传到世界各地，但音箱因为不停工作罢工造反，反而控制信徒攻击前来修理音箱的主角。\n\n三 美术风格\n\n整体为黄铜+蒸汽机械质感，小怪、音箱BOSS、平台等物体均为黄铜制造，蒸汽驱动。\n特殊说明：\n· 小怪弹奏管风琴\n· 平台为蒸汽支撑，在踏上\\离开时会放气\\充气\n· BOSS发射蒸汽弹\n· 其他音效说明详见视频\n\n\n注：篇幅限制并未在此简介展示更多音乐音效思路介绍，详情可点击下方链接访问此作品ggac官网获取详细说明", "en": "This work is an entry for \"This Page Remembers: Papergames 2026 Creation Contest\"\n\nBackground Introduction\n\nI. Level Gameplay\n\nPlayers defeat minions to enter the BOSS room, and win the victory after defeating the BOSS.\n\nII. Plot Narrative\n\nDevout believers sing praises to their Creator by playing the pipe organ. Their music and singing are continuously amplified through speakers and spread to all parts of the world. However, the speakers go on strike and rebel due to non-stop operation, and instead control the believers to attack the protagonist who comes to repair the speakers.\n\nIII. Art Style\n\nThe overall style features brass + steam mechanical texture. Minions, speaker BOSS, platforms and other objects are all made of brass and driven by steam.\n\nSpecial Notes:\n\nMinions play the pipe organ. The platform is supported by steam, which will deflate\\inflate when stepped on\\left. The BOSS launches steam bombs. For other sound effect descriptions, please refer to the video for details.\n\nNote: Due to space limitations, more ideas about music and sound effects are not shown in this introduction. For details, you can click the link below to visit the official GGAC website of this work for detailed descriptions."}, "cosmic": {"zh": "本作为“Ludum Dare 59”参赛作品\n\n\n背景介绍\n\n一 关卡玩法\n\n玩家通过操纵飞船在太空捡垃圾并售卖，换取妻子遗留下来的信息与自己的记忆\n\n二 剧情叙事\n\n玩家为在太空进行垃圾回收的飞船员工，已经身患重病，在完成此次捡垃圾工作后将会死去。由于妻子的过世，他原本想安安静静得死在太空，成为新的太空垃圾，但妻子生前留下的信息动摇了他的想法……\n\n三 音乐音效设计思路\n\n由于比赛只有三天的制作时间，因此更多的聚焦在音乐效果的简单呈现。音乐风格保持合成器加少量真实乐器，力求营造孤寂的太空感。音效设计较少，仅设计抓取、丢弃、爆炸等简单音效。\n\n遗憾的是由于时间紧迫，大部分音乐音效并未实装。视频中展现全部的音乐效果，游戏Ludum Dare官网链接可通过下方按钮进入。", "en": "This work is an entry for \"Ludum Dare 59\"\n\nBackground Introduction\n\nI. Level Gameplay\n\nPlayers control a spaceship to collect and sell garbage in space, in exchange for the information left by his wife and his own memories.\n\nII. Plot Narrative\n\nThe player is a spaceship employee engaged in garbage recycling in space, who is already seriously ill and will die after completing this garbage collection work. Due to the passing of his wife, he originally wanted to die quietly in space and become new space garbage, but the information left by his wife before her death shook his mind...\n\nIII. Music and Sound Effect Design Concept\n\nSince the production time of the competition is only three days, more focus is placed on the simple presentation of music effects. The music style adopts synthesizers plus a small number of real instruments, striving to create a lonely sense of space. There are few sound effect designs, only simple sound effects such as grabbing, discarding, and explosion are designed.\n\nUnfortunately, due to the tight schedule, most of the music and sound effects have not been implemented. \n\nAll the music effects are shown in the video, and the official Ludum Dare website link for the game can be accessed via the button below."}, "courage": {"zh": "本作为“这页纸记得 叠纸游戏2026创作大赛”参赛作品\n\n\n创作背景\n本作灵感源于暖暖在《奇迹暖暖》《闪耀暖暖》《无限暖暖》三部曲中，穿越奇迹大陆后开启的那段未知而瑰丽的旅途。暖暖身处陌生世界，始终怀揣着出发的勇气与帮助他人的善意，这份特质既鼓舞了奇迹大陆的原住民们，也打动了屏幕外的玩家。本作以暖暖这场奇幻却暗藏危险的冒险旅途为基底，力求展现暖暖在拯救世界的旅程中，初遇住民、遭遇险境、战胜强敌、再度出发的勇气之路。\n\n故事简要\n用魔法穿过时空的裂隙，暖暖踏入奇迹大陆。\n这里民风淳朴，居民热情友善，她很快便卸下异乡人的拘谨，与当地居民打成一片，欢歌载舞。不料蛰伏多时的黑暗势力骤然降临，撕裂了庆典的欢腾，将恐惧与阴影洒向大地。\n暖暖为守护奇迹大陆挺身而出，以一己之身迎向汹涌暗潮。历经鏖战，她终于感悟神明的力量，在绝境中击退黑暗势力。\n当最后一缕暗影消散，阳光重新照耀大地，朋友们用最热烈的欢呼和盛大的庆典表达他们的敬意与感激。火光彻夜不息，歌声久久回荡，仿佛一切都未曾改变。\n然而远方的命运从未停止召唤，未知的谜题仍等待暖暖去解答。伙伴温柔的埙音如雾弥漫，诉说离别，亦为下一段冒险故事埋下伏笔。\n\n音乐结构\n\nA段 0:00-0:36 44拍\n前导段，描绘暖暖穿越之时。配器运用弦乐、木管、竖琴和少量打击乐器，同时大量运用好莱坞和弦营造魔法风格。以竖琴solo作为AB段的桥梁，柔和降落到异世界的草地。\n\nB段 0:36-1:41 43拍\n凯尔特风格。初到异世界。配器采用特色爱尔兰锡哨、爱尔兰竖琴、手鼓等，以打击乐solo和铜管的四次号角拉开冒险的帷幕。使用混合利底亚调式，营造轻盈和雀跃感。在推进过程中加入人声的呼喊与欢呼，展现奇迹大陆的淳朴热情民风。结尾以连续的下行音阶暗示黑暗势力的悄然降临。\n\nC段 1:41-3:12 45拍\\44拍\n风雨已来。由混合利底亚转为小调，铜管、合唱人声接管音乐，增加史诗感与紧张感。情绪在节奏型的重复和乐器逐层加入中不断推进，推向高潮后骤收，改为平稳的44拍。\n人声大意：\n黑暗已来\\何以抗争\\黑暗已来\\何以抗争\n战斗\\战斗\\守护家园\\战斗\\战斗\\怒火不息\n继承神明力量\\黑暗已来\\以此抗争\n\nB’段 3:12-3:59 43拍\n复现B段主旋律，同时调式变为利底亚调式，整体配器和声部相较B段更为丰富。结尾弱收。", "en": "This work is an entry for \"This Page Remembers: Papergames 2026 Creation Contest\"\n\nCreation Background\nThis work draws inspiration from the unknown and magnificent journey that Nikki embarks on after crossing into the Miraland in the trilogy of 《Miracle Nikki》, 《Shining Nikki》 and 《Infinity Nikki》. Stranded in an unfamiliar world, Nikki always holds the courage to set out and the kindness to help others. This trait has not only inspired the indigenous people of Miraland, but also touched the players beyond the screen. Based on Nikki's fantastical yet perilous adventure, this work strives to present the courageous path Nikki takes during her journey to save the world, where she meets inhabitants for the first time, encounters dangers, defeats powerful enemies, and sets off again.\n\nStory Summary\nUsing magic to pass through the rift of time and space, Nikki steps into Miraland.\nThe local people here are honest and simple, and the residents are warm and friendly. She quickly lets go of the awkwardness of being a stranger, mingles with the local residents, singing and dancing merrily. Unexpectedly, the dark forces that have been dormant for a long time suddenly descend, tearing apart the jollity of the celebration and spreading fear and shadow across the land.\nNikki steps forward to protect Miraland, facing the surging dark tide alone. After a fierce battle, she finally comprehends the power of the deities and repels the dark forces in the desperate situation.\nWhen the last wisp of shadow dissipates and the sun shines on the earth again, friends express their respect and gratitude with the warmest cheers and a grand celebration. The fire burns all night long, and the singing lingers for a long time, as if nothing has ever changed.\nHowever, the distant fate never stops calling, and unknown puzzles still wait for Nikki to solve. The gentle sound of the xun played by her companions lingers like mist, conveying the parting and foreshadowing the next adventure story.\n\nMusic Structure\n\nSection A 0:00-0:36 4/4 \nIntroductory segment, depicting the moment when Nikki travels through time and space. Orchestration includes strings, woodwinds, harp and a small amount of percussion instruments, while a large number of Hollywood chords are used to create a magical style. A harp solo serves as the bridge between Section A and Section B, softly leading to the grassland of the other world.\n\nSection B 0:36-1:41 3/4 \nCeltic style, depicting the first arrival in the other world. Orchestration adopts characteristic Irish tin whistle, Irish harp, hand drum, etc. A percussion solo and four blasts of brass horns draw the curtain of the adventure. The Mixolydian mode is used to create a light and joyful feeling. In the progression, vocal shouts and cheers are added to show the simple and warm folk customs of Miraland. The ending uses a continuous descending scale to imply the quiet arrival of the dark forces.\n\nSection C 1:41-3:12 5/4 and 4/4 \nThe storm has arrived. The mode shifts from Mixolydian to minor, with brass and chorus vocals taking over the music, enhancing the epic and tense atmosphere. The emotion keeps building up through the repetition of rhythmic patterns and the gradual addition of instruments, then cuts off abruptly after reaching the climax, switching to a steady 4/4 time signature.\n\nGeneral meaning of the vocals:\nDarkness has come \\ How can we fight back \\ Darkness has come \\ How can we fight back\nFight \\ Fight \\ Guard our home \\ Fight \\ Fight \\ Wrath never ceases\nInherit the power of the deities \\ Darkness has come \\ Fight back with this power\n\nSection B' 3:12-3:59 3/4 \nReprises the main melody of Section B, while the mode changes to Lydian, and the overall orchestration and vocal parts are richer than those of Section B. The section ends with a fade-out."}, "orchestra1": {"zh": "《茶马》\n作曲：李博禅\n演奏：上海交通大学学生民乐团·交韵室内乐团\n中胡：潘瑜清   二胡：周天翊\n笛/箫：吴 迪   笙：何雨萱\n扬琴：李金昕 大阮：姜羽泽\n古筝：陈煜萱   琵琶：金静尧\n打击乐：代仕轩", "en": "“Tea Horse Road”\nComposer: Li Bochan\nPerformed by: Jiaoyun Chamber Ensemble, Shanghai Jiao Tong University Student Chinese Orchestra\nZhonghu: Pan Yuqing   Erhu: Zhou Tianyi\nDizi/Xiao: Wu Di   Sheng: He Yuxuan\nYangqin: Li Jinxin   Daruan: Jiang Yuze\nGuzheng: Chen Yuxuan   Pipa: Jin Jingyao\nPercussion: Dai Shixuan"}, "orchestra2": {"zh": "《Can't Take My Eyes of You》\n改编：钟之岳\n演奏：上海交通大学学生民乐团\n双笙与民族管弦乐团", "en": "“Can’t Take My Eyes of You”\nArrangement: Zhong Zhiyue\nPerformed by: Shanghai Jiao Tong University Student Chinese Orchestra\nTwo sheng players with Chinese orchestra"}};
+    Object.entries(originalDescriptions).forEach(([id, copy]) => {
+      const card = document.querySelector(`.project[data-project="${id}"]`);
+      if (!card) return;
+      card.querySelector('.desc.zh').textContent = copy.zh;
+      card.querySelector('.desc.en').textContent = copy.en;
+    });
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
