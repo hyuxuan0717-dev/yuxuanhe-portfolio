@@ -1904,6 +1904,9 @@ spotLightR.castShadow = !isCompactViewport();
         const languageGate = document.getElementById('language-gate');
         function applySiteLanguage(language) {
             siteLanguage = language === 'en' ? 'en' : 'zh';
+            try {
+  localStorage.setItem('portfolioLanguage', siteLanguage);
+} catch (error) {}
             document.documentElement.lang = siteLanguage;
             document.title = siteLanguage === 'zh' ? '何雨萱｜个人作品集' : 'Yuxuan HE | Portfolio';
             document.getElementById('intro-message').textContent = siteLanguage === 'zh' ? '驶向小岛……' : 'APPROACHING THE ISLAND…';
