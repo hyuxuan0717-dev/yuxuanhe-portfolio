@@ -51,10 +51,49 @@
     #mobile-controls button { border-radius: 13px; }
     #port-media-shell { height: 21dvh; min-height: 118px; }
 }
+    .mode-switch {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: 1px solid rgba(207,190,255,.36);
+  border-radius: 999px;
+  color: #f7f2ff;
+  background: rgba(14,12,25,.72);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 5px 24px rgba(0,0,0,.28), 0 0 18px rgba(172,135,255,.12);
+  font: 700 12px/1.2 Inter,system-ui,sans-serif;
+  text-decoration: none;
+}
+.mode-switch:hover {
+  background: rgba(91,67,135,.78);
+  border-color: rgba(221,207,255,.72);
+}
+#instructions {
+  top: 68px !important;
+}
+@media (max-width: 700px), (pointer: coarse) and (max-width: 900px) {
+  .mode-switch {
+    top: 10px;
+    left: 10px;
+    padding: 9px 12px;
+    font-size: 11px;
+  }
+  #instructions {
+    top: 58px !important;
+    left: 10px !important;
+  }
+}
     </style>
 </head>
 <body class="text-gray-200 selection:bg-gray-700 selection:text-white">
-
+<a class="mode-switch" href="./portfolio-simple.html" aria-label="切换到简洁版">
+  ☷ 切换简洁版 / Simple View
+</a>
     <div id="language-gate" role="dialog" aria-modal="true" aria-labelledby="language-gate-title">
         <div class="w-[min(92vw,440px)] rounded-3xl border border-white/15 bg-slate-950/90 p-8 text-center shadow-2xl">
             <p class="mb-3 text-[10px] font-bold uppercase tracking-[0.3em] text-violet-200/70">YUXUAN HE · PORTFOLIO</p>
