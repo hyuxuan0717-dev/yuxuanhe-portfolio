@@ -234,7 +234,9 @@
       document.title = english ? 'Yuxuan HE | Portfolio' : '何雨萱｜作品集';
       languageButton.textContent = english ? '中文' : 'EN';
       languageButton.setAttribute('aria-label', english ? '切换为中文' : 'Switch to English');
+      try { localStorage.setItem('portfolioLanguage', english ? 'en' : 'zh'); } catch (error) { /* Continue if storage is unavailable. */ }
     }
+    try { setLanguage(localStorage.getItem('portfolioLanguage') === 'en'); } catch (error) { setLanguage(false); }
     languageButton.addEventListener('click', () => setLanguage(!document.body.classList.contains('en')));
     document.querySelectorAll('.video-lazy').forEach(box => {
       box.querySelector('.bili-load').addEventListener('click', () => {
